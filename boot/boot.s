@@ -1,21 +1,25 @@
+;First stage of the boot loader
+
 [org 0x7c00]
 
 ;The second bootloader stage will be placed right after the first
 %define SECOND_STAGE_LOCATION 0x7e00
-%define SECOND_STAGE_SECTORS_TO_READ 1
+%define SECOND_STAGE_SECTORS_TO_READ 4
 
 segment .text
 
-start:
+;Start of the entire OS
+;BIOS hands over control to the boot loader from here
+BootLoaderStart:
     ;Setup the segment registers
     xor ax, ax
     mov es, ax
     mov ds, ax
 
     mov [BOOT_DISK], dl
-
+    
     ;Setup the stack
-    mov bp, 0x8000
+    mov bp, 0x7c00
     mov sp, bp
 
     ;Print the msg
@@ -41,6 +45,8 @@ LoadingSecondStage:
     call PrintStr
 
     ;Jump into the second bootloader stage
+    ;Also, pass the boot disk in dl
+    mov dl, [BOOT_DISK]
     jmp SECOND_STAGE_LOCATION
 
 SecondStageLoadError:
@@ -65,7 +71,7 @@ HaltLoop:
 
 ;Prints a null-terminated string
 ;Pointer to the string is must be passed in the si register
-;Does not preserve any registers
+;Preserves segment registers
 PrintStr:
     
     .PrintStr_Loop:
