@@ -1,5 +1,9 @@
 [org 0x7c00]
 
+;The second bootloader stage will be placed right after the first
+%define SECOND_STAGE_LOCATION 0x7e00
+%define SECOND_STAGE_SECTORS_TO_READ 1
+
 segment .text
 
 start:
@@ -16,23 +20,60 @@ start:
 
     ;Print the msg
     mov si, msg
-    call print_str
+    call PrintStr
 
-halt_loop:
+LoadingSecondStage:
+    ;Load in the second bootloader stage
+    mov bx, SECOND_STAGE_LOCATION
+    mov ah, 2
+    mov al, SECOND_STAGE_SECTORS_TO_READ
+    mov ch, 0
+    mov cl, 2
+    mov dh, 0
+    mov dl, [BOOT_DISK]
+    int 0x13
+
+    jc SecondStageLoadError ;The carry flag is set if there is an error
+    cmp al, SECOND_STAGE_SECTORS_TO_READ
+    jne SecondStageLoadError  ;If the incorrect number of sectors were read, then thats a problem
+
+    mov si, second_stage_load_success_msg
+    call PrintStr
+
+    ;Jump into the second bootloader stage
+    jmp SECOND_STAGE_LOCATION
+
+SecondStageLoadError:
+
+    inc byte[n_second_stage_load_attempts]
+
+    mov al, n_second_stage_load_attempts
+    ;Attempt to load the second stage four times before giving up
+    ;This is because floppy disks are typically pretty bad at loading stuff, and
+    ;multiple attemps may be needed.
+    cmp al, 4
+    jle LoadingSecondStage
+
+    mov si, second_stage_load_error_msg
+    call PrintStr
+
+    jmp HaltLoop
+
+HaltLoop:
     hlt
-    jmp halt_loop
+    jmp HaltLoop
 
 ;Prints a null-terminated string
 ;Pointer to the string is must be passed in the si register
 ;Does not preserve any registers
-print_str:
+PrintStr:
     
-    .print_str_loop:
+    .PrintStr_Loop:
         mov al, [si]  ;Move the current character into al to be printed by the BIOS
         
         ;Stop at a null terminator
         cmp al, 0
-        je .print_str_loop_end
+        je .PrintStr_LoopEnd
 
         ;Setup the BIOS interrupt argument
         mov ah, 0x0e
@@ -44,17 +85,24 @@ print_str:
         ;Move to the next character
         inc si
 
-        jmp .print_str_loop
+        jmp .PrintStr_Loop
 
-    .print_str_loop_end:
+    .PrintStr_LoopEnd:
 
-    mov sp, bp
-    pop bp
     ret
 
 BOOT_DISK: db 0
 
-msg: db "Hello world!", 0x0a, 0x0d, 0x0
+;The number of times loading the second stage of the bootloader has been attempted and failed
+n_second_stage_load_attempts: db 0
+
+msg: db "First bootloader stage running!", 0x0a, 0x0d, "Loading second stage...", 0x0a, 0x0d, 0x0
+
+second_stage_load_error_msg:
+    db "ERROR: Failed to load second bootloader stage!", 0x0a, 0x0d, 0x0
+
+second_stage_load_success_msg:
+    db "Loaded the second bootloader stage!", 0x0a, 0x0d, 0x0
 
 times 510-($-$$) db 0
 dw 0xaa55
