@@ -590,8 +590,6 @@ ProtectedModeStart:
     mov ebp, 0x80000
     mov esp, ebp
 
-    ;mov dword[0xb8000], 0x07690748
-
     ;Pass the address of the VBE information structs as arguments to the kernel. This allows it to know, for example, the address of the frame buffer.
     lea eax, [vbe_info_struct]  ;eax holds the vbe_info
     lea ebx, [vbe_mode_info_struct] ;ebx holds the vbe_mode_info
@@ -599,4 +597,5 @@ ProtectedModeStart:
     jmp KERNEL_LOCATION ;Enter the kernel (Finally!)
 
 ;Make the stage exactly 2 sectors large
+;This makes it easier to load in the kernel, since this makes the start of the kernel always be at a multiple of 512 bytes in disk
 times 512*SECOND_STAGE_SIZE_IN_SECTORS-($-$$) db 0
