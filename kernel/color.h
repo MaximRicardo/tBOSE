@@ -1,5 +1,5 @@
 #pragma once
 
-struct Color {
+struct COLOR_rgb {
     float r, g, b;
 };
