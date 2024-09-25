@@ -58,53 +58,9 @@ KernelLoadError:
 
 KernelLoadSuccess:
 
-    ;Get VESA BIOS information
-   ; mov ax, 0x4f00
-   ; lea di, [vbe_info_struct.signature]
-   ; int 0x10
-   ; 
-   ; cmp ax, 0x004f
-   ; jne VESANotSupported
-
-   ; mov si, vesa_valid_signature
-   ; mov di, vbe_info_struct ;The signature is the first item in the struct
-   ; mov cx, 4
-   ; rep cmpsb
-   ; jne VESANotSupported  ;If the signatures are different, then VESA is not supported
-
-   ; ;Check if vesa mode 0x0100 is supported
-   ; mov ax, 0x0100
-   ; call IsVideoModeSupported
-   ; ;If it is not supported, then RIP you.
-   ; cmp ax, 0
-   ; je VESANotSupported
-
-   ; ;Get VBE mode info
-   ; mov ax, 0x4f01
-   ; mov cx, 0x0100
-   ; lea di, [vbe_mode_info_struct]
-   ; int 0x10
-
-   ; cmp ax, 0x004f
-   ; jne VESANotSupported
-
-   ; ;Make sure the VBE mode supports a linear frame buffer
-   ; ;Whether or not it does is stored in the 7th bit of vbe_mode_info_struct.attributes
-   ; mov al, [vbe_mode_info_struct.attributes]
-   ; cmp al, 0x80
-   ; jl VESANotSupported ;If the 7th bit is off, then this VBE mode does not support a linear frame buffer
-
-   ; ;Finally, set the VBE mode
-   ; mov ax, 0x4f02
-   ; mov bx, 0x4100  ;Mode 0x0100
-   ; int 0x10
-
-   ; cmp ax, 0x004f
-   ; jne VESANotSupported
-
-    mov ax, 640
-    mov bx, 480,
-    mov cl, 32
+    mov ax, 640 ;The preferred screen width is 640 pixels
+    mov bx, 480 ;The preferred screen height is 480 pixels
+    mov cl, 32  ;The preferred BPP is 32 bits / 4 bytes
     call vbe_set_mode
     jc VESANotSupported
 
@@ -249,48 +205,6 @@ CheckA20:
     pop es
     pop ds
     popf
-    ret
-
-;Checks if VESA video mode is supported
-;video mode is passed in ax.
-;returns 0 if it is not supported, and a non-zero number if it is supported
-;Preserves segment registers
-IsVideoModeSupported:
-
-    push ds
-
-    ;Set cx to false
-    mov cx, 0
-    
-    ;Point ds:si at the array of video modes
-    mov si, word[vbe_info_struct.video_modes]   ;Low word (offset)
-    mov ds, word[vbe_info_struct.video_modes+2] ;High word (segment)
-
-    .find_video_mode_loop:
-        mov bx, [ds:si]
-        
-        cmp bx, 0xffff  ;This denotes the end of the array
-        je .find_video_mode_loop_end
-
-        cmp ax, bx
-        je .video_mode_supported
-
-        ;Move to the next element
-        add si, 2
-
-        jmp .find_video_mode_loop
-
-    .video_mode_supported:
-        mov cx, 1
-        jmp .find_video_mode_loop_end
-
-    .find_video_mode_loop_end:
-    
-    pop ds
-
-    ;Move the result into ax
-    mov ax, cx
-
     ret
 
 VESANotSupported:
@@ -458,7 +372,7 @@ n_kernel_load_attemps: db 0
 msg: db "Second bootloader stage is running!", 0x0a, 0x0d, 0x0
 
 vesa_not_supported_msg:
-    db "ERROR: Either VESA is not supported by this machine, or it does not support mode 0x0100!", 0x0a, 0x0d, 0x0
+    db "ERROR: Either, VESA is not supported by this machine, or a 640x480x32 resolution is not supported!", 0x0a, 0x0d, 0x0
 
 loading_kernel_msg:
     db "Loading kernel from disk...", 0x0a, 0x0d, 0x0

@@ -1,11 +1,15 @@
 #!/bin/bash
 
-nasm boot/boot.s -f bin -o bin/boot.bin
-nasm boot/second_stage.s -f bin -o bin/second_stage.bin
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
-cat bin/boot.bin bin/second_stage.bin > bin/boot_loader.bin
+mkdir -p $SCRIPT_DIR/bin
+
+nasm $SCRIPT_DIR/boot/boot.s -f bin -o $SCRIPT_DIR/bin/boot.bin
+nasm $SCRIPT_DIR/boot/second_stage.s -f bin -o $SCRIPT_DIR/bin/second_stage.bin
+
+cat $SCRIPT_DIR/bin/boot.bin $SCRIPT_DIR/bin/second_stage.bin > $SCRIPT_DIR/bin/boot_loader.bin
 
 # Build the kernel aswell
-./build_kernel.sh
+. $SCRIPT_DIR/build_kernel.sh
 
-cat bin/boot_loader.bin bin/kernel.bin > bin/os.bin
+cat $SCRIPT_DIR/bin/boot_loader.bin $SCRIPT_DIR/bin/kernel.bin > $SCRIPT_DIR/bin/os.bin

@@ -2,9 +2,11 @@ cmake_minimum_required(VERSION 3.10)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
+# set(CMAKE_C_COMPILER i386-elf-gcc)
+
 project(kernel)
 
-add_compile_options(-std=c99 -target i386-elf -mgeneral-regs-only -Wall -Wextra -Wpedantic -pedantic -ffreestanding -m32)
+add_compile_options(-std=c99 -target i386-elf -Wall -Wextra -Wpedantic -pedantic -ffreestanding -m32)
 
 # Generate a relocatable object file
 add_link_options(-target i386-elf -r)
