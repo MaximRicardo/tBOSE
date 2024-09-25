@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <stdbool.h>
 
 struct VBE_Info {
     char signature[4];	// must be "VESA" to indicate valid VBE support
@@ -54,6 +55,8 @@ struct VBE_ModeInfo {
 	uint16_t off_screen_mem_size;	// size of memory in the framebuffer but not being displayed on the screen
 	uint8_t reserved1[206];
 };
+
+extern bool VBE_info_has_been_set;
 
 extern struct VBE_Info VBE_info;
 extern struct VBE_ModeInfo VBE_mode_info;
