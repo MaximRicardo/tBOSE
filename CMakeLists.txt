@@ -4,18 +4,24 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/kernel_bin)
 
 project(kernel)
 
-set(CMAKE_C_FLAGS "-std=c99 -masm=intel -target i386-elf -Wall -Wextra -Wpedantic -pedantic -ffreestanding -m32 -fno-stack-protector -nostdlib")
+set(CMAKE_C_FLAGS "-std=c99 -masm=intel -target i386-elf -Wall -Wextra -Wpedantic -pedantic -ffreestanding -m32 -fno-stack-protector -nostdlib -ffunction-sections")
+set(CMAKE_EXE_LINKER_FLAGS "-target i386-elf -T${CMAKE_CURRENT_SOURCE_DIR}/linker.ld -Ttext 0x1000 -z noexecstack")
+set(CMAKE_ASM_NASM_OBJECT_FORMAT "elf")
 
-# Generate a relocatable object file
-add_link_options(-target i386-elf -r)
+enable_language(ASM_NASM)
 
-file(GLOB_RECURSE Sources CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/kernel/*.c")
+file(GLOB_RECURSE kernel_c_sources CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/kernel/*.c")
+file(GLOB_RECURSE kernel_asm_sources CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/kernel/*.s")
 
-add_executable(kernel "${Sources}")
+foreach(X IN ITEMS ${kernel_asm_sources})
+    set_source_files_properties(${X} PROPERTIES LANGUAGE ASM_NASM)
+endforeach()
+
+add_executable(kernel ${kernel_c_sources} ${kernel_asm_sources})
 
 set_target_properties(
     kernel
     PROPERTIES
-        OUTPUT_NAME "kernel_c_code"
-        SUFFIX ".o"
+        OUTPUT_NAME "kernel"
+        SUFFIX ".elf"
 )

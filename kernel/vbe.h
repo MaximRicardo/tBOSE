@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+//Info about the VBE supported by the video card
 struct VBE_Info {
     char signature[4];	// must be "VESA" to indicate valid VBE support
 	uint16_t version;			// VBE version; high byte is major version, low byte is minor version
@@ -18,6 +19,7 @@ struct VBE_Info {
 	char oem_data[256];		// OEM BIOSes store their strings in this area
 };
 
+//Info about the current VESA mode
 struct VBE_ModeInfo {
     uint16_t attributes;		// deprecated, only bit 7 should be of interest to you, and it indicates the mode supports a linear frame buffer.
 	uint8_t window_a;			// deprecated
@@ -40,12 +42,12 @@ struct VBE_ModeInfo {
 	uint8_t image_pages;
 	uint8_t reserved0;
 
-	uint8_t red_mask;
-	uint8_t red_position;
-	uint8_t green_mask;
-	uint8_t green_position;
-	uint8_t blue_mask;
-	uint8_t blue_position;
+	uint8_t red_mask;       //Width of the red channel
+	uint8_t red_position;   //Which bit the red channel starts at
+	uint8_t green_mask;     //Width of the green channel
+	uint8_t green_position; //Which bit the green channel starts at
+	uint8_t blue_mask;      //Width of the blue channel
+	uint8_t blue_position;  //Which bit the blue channel starts at
 	uint8_t reserved_mask;
 	uint8_t reserved_position;
 	uint8_t direct_color_attributes;
@@ -57,7 +59,6 @@ struct VBE_ModeInfo {
 };
 
 extern bool VBE_info_has_been_set;
-
 extern struct VBE_Info VBE_info;
 extern struct VBE_ModeInfo VBE_mode_info;
 

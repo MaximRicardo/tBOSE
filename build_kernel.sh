@@ -2,13 +2,12 @@
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
-mkdir -p bin
-mkdir -p kernel_bin
+mkdir -p $SCRIPT_DIR/bin
+mkdir -p $SCRIPT_DIR/kernel_bin
 
-nasm $SCRIPT_DIR/kernel/kernel_entry.s -f elf -o $SCRIPT_DIR/kernel_bin/kernel_entry.o
-nasm $SCRIPT_DIR/kernel/interrupts.s -f elf -o $SCRIPT_DIR/kernel_bin/interrupts.o
-
-# Compile and link the kernel c code
+# Compile and link the kernel to an ELF file
 make -C $SCRIPT_DIR
 
-ld -m elf_i386 -o $SCRIPT_DIR/kernel_bin/kernel.bin -Ttext 0x1000 $SCRIPT_DIR/kernel_bin/kernel_entry.o $SCRIPT_DIR/kernel_bin/kernel_c_code.o $SCRIPT_DIR/kernel_bin/interrupts.o --oformat binary
+# The flat binary file is what will be loaded by the bootloader
+# Therefore the ELF file has to be converted into a flat BIN file
+objcopy -O binary $SCRIPT_DIR/kernel_bin/kernel.elf $SCRIPT_DIR/kernel_bin/kernel.bin

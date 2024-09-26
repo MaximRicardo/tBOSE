@@ -1,4 +1,5 @@
 #include <stddef.h>
+#include <stdint.h>
 
 #include "pixel.h"
 #include "color.h"
@@ -17,16 +18,19 @@ void PIXEL_plot(unsigned x, unsigned y, uint32_t color) {
 
 //Plot pixel but with normalized RGB colors
 void PIXEL_plot_norm_rgb(unsigned x, unsigned y, struct COLOR_rgb color) {
-    
-    uint8_t r_channel = color.r*255.f;
-    uint8_t g_channel = color.g*255.f;
-    uint8_t b_channel = color.b*255.f;
 
-    //For some reason the colors are in reversed order
-    uint32_t color_u32 = b_channel |
-                    (g_channel << 8) |
-                    (r_channel << 16) |
-                    0x00000000;
+    unsigned r_channel_max = (1 << VBE_mode_info.red_mask) - 1;
+    unsigned g_channel_max = (1 << VBE_mode_info.green_mask) - 1;
+    unsigned b_channel_max = (1 << VBE_mode_info.blue_mask) - 1;
+
+    uint8_t r_channel = color.r*(float)r_channel_max;
+    uint8_t g_channel = color.g*(float)g_channel_max;
+    uint8_t b_channel = color.b*(float)b_channel_max;
+
+    uint32_t color_u32 = 0;
+    color_u32 |= r_channel << VBE_mode_info.red_position;
+    color_u32 |= g_channel << VBE_mode_info.green_position;
+    color_u32 |= b_channel << VBE_mode_info.blue_position;
 
     PIXEL_plot(x, y, color_u32);
 

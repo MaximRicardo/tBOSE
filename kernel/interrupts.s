@@ -2,7 +2,7 @@
 
 extern INTERRUPT_default_handler
 
-section .text
+section .text.interrupts
 
 global INTERRUPT_default
 
@@ -22,11 +22,15 @@ global INTERRUPT_default
 
 INTERRUPT_default:
 
+    push ebp
+
     m_PUSH_HANDLER_MODIFIED_REGS
-    push dword[esp]   ;Pass the address where the interrupt happened as an argument
+    push dword[ebp+4] ;Pass the address where the interrupt happened as an argument. This works by using the return address on the stack
     call INTERRUPT_default_handler
     add esp, 4
     m_POP_HANDLER_MODIFIED_REGS
+
+    pop ebp
 
     jmp HaltLoop
 

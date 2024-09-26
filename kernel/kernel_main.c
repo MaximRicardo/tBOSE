@@ -1,7 +1,6 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include <string.h>
 
 #include "color.h"
 #include "vbe.h"
@@ -34,18 +33,17 @@ void k_main(__attribute__((unused)) const uint32_t old_vbe_info_ptr_u32, const u
     }
 
     //Create a new GDT, so the kernel doesn't rely on the one in the bootloader
-    //This means the bootloader can be safely overwritten later
-    memset(&gdt.entries[0], 0, sizeof(struct GDT_Entry)); //Null descriptor
+    gdt.entries[0] = GDT_create_zero_entry(); //The NULL descriptor
     gdt.entries[1] = GDT_create_entry(0x00000000, 0xfffff, (m_GDT_CODE_KERNEL));
     gdt.entries[2] = GDT_create_entry(0x00000000, 0xfffff, (m_GDT_DATA_KERNEL));
 
     gdt.descriptor.size = m_N_GDT_ENTRIES*sizeof(struct GDT_Entry);
-    gdt.descriptor.start = (uint32_t)gdt.entries;
+    gdt.descriptor.base = (uint32_t)gdt.entries;
 
     //Set the new GDT as the current GDT
     __asm__("lgdt %0\n" :: "m"(gdt.descriptor));
 
-    //Create a new IDT, since the one created in the bootloader was useless
+    //Create a new IDT, since the one created by the boot loader was useless
     for (unsigned i = 0; i < 256; i++) {
         idt.entries[i] = IDT_create_entry((uint32_t)INTERRUPT_default);
     }
@@ -56,6 +54,8 @@ void k_main(__attribute__((unused)) const uint32_t old_vbe_info_ptr_u32, const u
 
     //Set the new IDT as the current IDT. Also interrupts can now be enabled
     __asm__("lidt %0\n" :: "m"(idt.descriptor));
+    
+    //Now the IDT and GDT are stored by the kernel, instead of the boot loader. That means the bootloader can safely be overwritten later if needed
 
     //Clear the screen to black
     for (unsigned y = 0; y < VBE_mode_info.height; y++) {
@@ -64,6 +64,12 @@ void k_main(__attribute__((unused)) const uint32_t old_vbe_info_ptr_u32, const u
             PIXEL_plot_norm_rgb(x, y, pixel_color);
         }
     }
+
+    k_printf("bpp = %d\n", VBE_mode_info.bpp);
+    k_printf("R: %d, %d\n", VBE_mode_info.red_mask, VBE_mode_info.red_position);
+    k_printf("G: %d, %d\n", VBE_mode_info.green_mask, VBE_mode_info.green_position);
+    k_printf("B: %d, %d\n", VBE_mode_info.blue_mask, VBE_mode_info.blue_position);
+    k_printf("direct_color_attribs = %x\n", VBE_mode_info.direct_color_attributes);
 
     k_printf("before interrupt\n");
     __asm__("mov ebx, 0\n"

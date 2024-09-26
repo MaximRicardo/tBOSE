@@ -51,14 +51,17 @@ struct GDT_Entry {
     uint8_t base_bits_24_31;
 } __attribute__((packed));
 
+//Describes the GDT itself. Is passed as the argument to "lgdt"
 struct GDT_Descriptor {
     uint16_t size;
-    uint32_t start;
+    uint32_t base;
 } __attribute__((packed));
 
+//Contains everything needed for an IDT
 struct GDT {
     struct GDT_Entry entries[m_N_GDT_ENTRIES];
     struct GDT_Descriptor descriptor;
 } __attribute__((packed));
 
 struct GDT_Entry GDT_create_entry(uint32_t base, uint32_t limit, uint16_t flags);
+struct GDT_Entry GDT_create_zero_entry(void); //Creates a zeroed-out GDT entry

@@ -1,11 +1,11 @@
 [bits 32]
 
-;Get the linker to stfu about not finding _start
-global _start
-
 extern k_main
 
-segment .text
+segment .text.kernel_entry
+
+;Get the linker to stfu about not finding _start
+global _start
 
 ;Start of the kernel
 ;The boot loader hands off control to the kernel from here 
@@ -32,9 +32,12 @@ _start:
 
 HaltLoop:
     hlt
-    jmp _start
+    jmp HaltLoop
 
+segment .rodata
 fcw: dw 0x037f
+
+segment .data
 
 VBEInfoPtr: dd 0
 VBEModeInfoPtr: dd 0
