@@ -3,6 +3,9 @@
 #include <stdint.h>
 
 #include "color.h"
+
+#define m_FRAMEBUFFER_VIRTUAL_ADDRESS 0xf0000000
+
 /*
  * Plots a pixel by directly writing color to the pixel's address in the frame buffer
  * If BPP=8, only the LSB of color is used

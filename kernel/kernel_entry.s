@@ -15,17 +15,18 @@ _start:
     push ebp
     mov ebp, esp
 
-    mov [VBEInfoPtr], eax
-    mov [VBEModeInfoPtr], ebx
+    mov [vbe_info_ptr], eax
+    mov [vbe_mode_info_ptr], ebx
     
     ;init the FPU
     fninit
     fldcw [fcw]
 
     ;Jump into the kernel's main function (Which is actually written in C! Yay)
-    ;One last thing before that, which is to pass the pointers to VBE info that was passed here by the boot loader, through to k_main.
-    push dword[VBEModeInfoPtr]
-    push dword[VBEInfoPtr]
+    call GetEip
+    push eax
+    push dword[vbe_mode_info_ptr]
+    push dword[vbe_info_ptr]
     call k_main
 
     ;k_main never returns, so no point in destroying the stack frame
@@ -34,10 +35,14 @@ HaltLoop:
     hlt
     jmp HaltLoop
 
+GetEip:
+    mov eax, [esp]
+    ret
+
 segment .rodata
 fcw: dw 0x037f
 
 segment .data
 
-VBEInfoPtr: dd 0
-VBEModeInfoPtr: dd 0
+vbe_info_ptr: dd 0
+vbe_mode_info_ptr: dd 0

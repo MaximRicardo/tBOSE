@@ -7,7 +7,7 @@
 
 void PIXEL_plot(unsigned x, unsigned y, uint32_t color) {
 
-    uint8_t *const screen_ptr = (uint8_t*)(VBE_mode_info.framebuffer);
+    uint8_t *const screen_ptr = (uint8_t*)m_FRAMEBUFFER_VIRTUAL_ADDRESS;
 
     size_t pixel_idx = y*VBE_mode_info.pitch + x*(VBE_mode_info.bpp/8);
     for (unsigned byte = 0; byte < VBE_mode_info.bpp/8; byte++) {

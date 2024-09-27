@@ -9,9 +9,9 @@
 #include "gdt.h"
 #include "idt.h"
 #include "interrupts.h"
+#include "mem_map.h"
 
 struct GDT gdt;
-
 struct IDT idt;
 
 __attribute__((noreturn))
@@ -24,13 +24,9 @@ static void halt_forever(void) {
 }
 
 __attribute__((noreturn))
-void k_main(__attribute__((unused)) const uint32_t old_vbe_info_ptr_u32, const uint32_t old_vbe_mode_info_ptr_u32) {
+void k_main(const struct VBE_Info *old_vbe_info_ptr, const struct VBE_ModeInfo *old_vbe_mode_info_ptr, uint32_t value) {
 
-    {
-        const struct VBE_Info *const old_vbe_info_ptr = (struct VBE_Info*)old_vbe_info_ptr_u32;
-        const struct VBE_ModeInfo *const old_vbe_mode_info_ptr = (struct VBE_ModeInfo*)old_vbe_mode_info_ptr_u32;
-        VBE_setup_infos(old_vbe_info_ptr, old_vbe_mode_info_ptr);
-    }
+    VBE_setup_infos(old_vbe_info_ptr, old_vbe_mode_info_ptr);
 
     //Create a new GDT, so the kernel doesn't rely on the one in the bootloader
     gdt.entries[0] = GDT_create_zero_entry(); //The NULL descriptor
@@ -65,17 +61,24 @@ void k_main(__attribute__((unused)) const uint32_t old_vbe_info_ptr_u32, const u
         }
     }
 
-    k_printf("bpp = %d\n", VBE_mode_info.bpp);
-    k_printf("R: %d, %d\n", VBE_mode_info.red_mask, VBE_mode_info.red_position);
-    k_printf("G: %d, %d\n", VBE_mode_info.green_mask, VBE_mode_info.green_position);
-    k_printf("B: %d, %d\n", VBE_mode_info.blue_mask, VBE_mode_info.blue_position);
-    k_printf("direct_color_attribs = %x\n", VBE_mode_info.direct_color_attributes);
+    //Set up the memory map properly so it can later be used for memory allocation
+    MEMORY_MAP_set_up();
 
-    k_printf("before interrupt\n");
-    __asm__("mov ebx, 0\n"
-            "div ebx\n");
-    k_printf("after interrupt\n");
-    
+    k_printf("kernel starts around %p\n", (void*)value);
+
+    k_printf("\nn memory map entries = %u. mem map descriptor ptr = %p\n\n", MEMORY_MAP_descriptor_ptr->n_entries, (void*)MEMORY_MAP_descriptor_ptr);
+
+    for (unsigned i = 0; i < MEMORY_MAP_descriptor_ptr->n_entries; i++) {
+        k_printf("ENTRY #%u\n", i);
+        k_printf("base lo = 0x%lx ", (unsigned long)MEMORY_MAP_entries[i].base_lo);
+        k_printf("base hi = 0x%lx ", (unsigned long)MEMORY_MAP_entries[i].base_hi);
+        k_printf("size lo = 0x%lx ", (unsigned long)MEMORY_MAP_entries[i].length_lo);
+        k_printf("size hi = 0x%lx ", (unsigned long)MEMORY_MAP_entries[i].length_hi);
+        k_printf("type = %ld ", (unsigned long)MEMORY_MAP_entries[i].type);
+        k_printf("unused = 0x%lx ", (unsigned long)MEMORY_MAP_entries[i].unused_field);
+        k_printf("size (KiB) = %lu\n\n", (unsigned long)MEMORY_MAP_entries[i].length_lo/1024);
+    }
+
     halt_forever();
 
 }

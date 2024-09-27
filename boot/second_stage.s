@@ -10,6 +10,15 @@ DATA_SEG equ GDT_DataDescriptor - GDT_Start
 
 %define SECOND_STAGE_SIZE_IN_SECTORS 4
 
+%define MEMORY_MAP_LOCATION 0x0500
+
+%define PAGE_DIRECTORY 0x5e000
+%define PAGE_TABLE_1 0x5f000
+%define FRAMEBUFFER_PAGE_TABLE 0x5d000
+
+;Gets aligned to 4 MiB
+%define FRAMEBUFFER_VIRTUAL_LOCATION 0xf0000000
+
 segment .text
 
 SecondStageStart:
@@ -92,6 +101,37 @@ EnableA20Fail:
     jmp HaltLoop
 
 EnableA20Done:
+
+    ;Load in the memory map at MEMORY_MAP_LOCATION+2
+    mov di, MEMORY_MAP_LOCATION+2
+    xor ebx, ebx
+
+GetMemoryMapLoop:
+
+    mov edx, 0x534D4150
+    mov eax, 0xe820
+    mov ecx, 24
+    int 0x15
+
+    jc GetMemoryMapLoopEnd
+    cmp eax, 0x534D4150
+    jne GetMemoryMapLoopEnd
+
+    inc word[n_memory_map_entries]
+
+    cmp ebx, 0
+    je GetMemoryMapLoopEnd
+
+    add di, 24
+
+    jmp GetMemoryMapLoop
+
+GetMemoryMapLoopEnd:
+
+    ;Store the size of the memory map at MEMORY_MAP_LOCATION
+    mov ax, [n_memory_map_entries]
+    mov [MEMORY_MAP_LOCATION], ax
+
     ;Enter protected mode in order to start running the kernel
     jmp EnterProtectedMode
 
@@ -383,9 +423,8 @@ loading_kernel_failed_msg:
 loading_kernel_success_msg:
     db "Successfully loaded the kernel from disk!", 0x0a, 0x0d, 0x0
 
+n_memory_map_entries: dw 0
 
-vesa_valid_signature:
-    db "VESA"
 
 vbe_info_struct:
     .signature: db "VBE2"
@@ -467,7 +506,7 @@ GDT_Start:
     GDT_Descriptor:
         dw GDT_End - GDT_Start - 1  ;Size
         dd GDT_Start                ;Start
-    
+
 EnterProtectedMode:
     
     ;#############################################
@@ -477,7 +516,7 @@ EnterProtectedMode:
     cli
     lidt [IDT_Descriptor]
     lgdt [GDT_Descriptor]
-    ;Change the least signifcant bit of cr0 to 1
+    ;Change the least significant bit of cr0 to 1
     mov eax, cr0
     or eax, 1
     mov cr0, eax
@@ -501,14 +540,107 @@ ProtectedModeStart:
     mov es, ax
     mov fs, ax
     mov gs, ax
+
+    ;Put the stack at the top of the free memory in the low memory region
+    ;128 KiB of space before the stack starts overwriting the page tables
     mov ebp, 0x80000
     mov esp, ebp
+    
+    ;Now, set up the page directory
+    mov edi, PAGE_DIRECTORY
+    mov ecx, 0
 
-    ;Pass the address of the VBE information structs as arguments to the kernel. This allows it to know, for example, the address of the frame buffer.
-    lea eax, [vbe_info_struct]  ;eax holds the vbe_info
-    lea ebx, [vbe_mode_info_struct] ;ebx holds the vbe_mode_info
+InitPageDirectoryLoop:
+    ;Each entry is 32 bits / 4 bytes wide
 
-    jmp KERNEL_LOCATION ;Enter the kernel (Finally!)
+    ;Sets the following flags to each entry:
+    ;   Supervisor: Only Kernel Mode can access them.
+    ;   Write Enabled: It can be read from and written to.
+    ;   Not Present: The page table is not present.
+    mov dword[edi], 0x00000002
+
+    add edi, 4 ;Move di to the next entry
+    inc ecx
+
+    cmp ecx, 1024
+    jl InitPageDirectoryLoop
+
+    ;Now, set up the first page table
+    mov edi, PAGE_TABLE_1
+    mov ecx, 0
+
+InitFirstPageTableLoop:
+    ;Each entry is 32 bits / 4 bytes wide
+
+    mov eax, 0x1000
+    mul ecx
+    or eax, 3
+    mov [edi], eax  ;Attributes: Supervisor level, Read/Write, Present
+
+    add edi, 4  ;Move to the next entry
+    inc ecx
+
+    cmp ecx, 1024
+    jl InitFirstPageTableLoop
+
+    ;Set the first entry in the page directory to point to the first page table
+    mov dword[PAGE_DIRECTORY], PAGE_TABLE_1 | 3
+    ;Also, map the first 4 MiB of the upper half, to the lower half of the address space
+    mov dword[(0xc0000000/(1024*1024*4))*4+PAGE_DIRECTORY], PAGE_TABLE_1 | 3
+
+    ;Now set up the framebuffer page table
+    mov edi, FRAMEBUFFER_PAGE_TABLE
+    mov ecx, 0
+
+    ;Move the address of the frame buffer, rounded down to closest 4 MiB multiple, into ebx
+    mov eax, [vbe_mode_info_struct.framebuffer]
+    mov ebx, (1024*1024*4)
+    xor edx, edx
+    div ebx
+    mul ebx
+    mov ebx, eax
+
+    ;Move the address of the end of the frame buffer into esi
+    ;End of the framebuffer ptr = height*pitch + framebuffer_start - 1
+    mov eax, [vbe_mode_info_struct.height]
+    mov esi, [vbe_mode_info_struct.pitch]
+    mul esi  ;height*pitch
+    add eax, [vbe_mode_info_struct.framebuffer] ;+ framebuffer_start
+    mov esi, eax
+    dec esi ;- 1
+
+InitFramebufferPageTableLoop:
+
+    mov eax, 0x1000
+    mul ecx
+    add eax, ebx
+
+    or eax, 3
+    mov dword[edi], eax
+
+    add edi, 4
+    inc ecx
+
+    cmp ecx, 1024
+    jl InitFramebufferPageTableLoop
+
+    ;Map the frame buffer to virtual memory
+    mov dword[(FRAMEBUFFER_VIRTUAL_LOCATION/(1024*1024*4))*4+PAGE_DIRECTORY], FRAMEBUFFER_PAGE_TABLE | 3
+
+    ;Give cr3 the address of the page directory
+    mov eax, PAGE_DIRECTORY
+    mov cr3, eax
+
+    ;Now paging can be enabled by setting the 31st bit of cr0
+    mov eax, cr0
+    or eax, 0x80000000
+    mov cr0, eax
+
+    ;Arguments to pass to the kernel
+    lea eax, [vbe_info_struct]  ;eax holds a pointer to the vbe_info
+    lea ebx, [vbe_mode_info_struct] ;ebx holds a pointer to holds the vbe_mode_info
+
+    jmp 0xc0000000 + KERNEL_LOCATION ;Enter the kernel (Finally!)
 
 ;Make the stage exactly 2 sectors large
 ;This makes it easier to load in the kernel, since this makes the start of the kernel always be at a multiple of 512 bytes in disk

@@ -19,7 +19,7 @@ BootLoaderStart:
     mov [BOOT_DISK], dl
     
     ;Setup the stack
-    mov bp, 0x7c00
+    mov bp, 0x0500
     mov sp, bp
 
     ;Print the msg
