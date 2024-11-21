@@ -69,6 +69,13 @@ void PRINT_char(char c, unsigned char_x, unsigned char_y) {
 
 }
 
+void PRINT_reset_cursor_pos() {
+
+    PRINT_cursor_x = 0;
+    PRINT_cursor_y = 0;
+
+}
+
 void k_putchar(char c) {
 
     if (c == '\r') {

@@ -10,9 +10,18 @@
 #include "idt.h"
 #include "interrupts.h"
 #include "mem_map.h"
+#include "page.h"
 
 struct GDT gdt;
 struct IDT idt;
+
+uint32_t *page_directory = (uint32_t*)0x5e000;
+
+//Maps the framebuffer to 0xf0000000
+//uint32_t *framebuffer_page_table = (uint32_t*)0x5d000;
+//uint32_t *framebuffer_page_table = (uint32_t*)0x100000;
+__attribute__((aligned(4096)))
+uint32_t framebuffer_page_table[1024];
 
 __attribute__((noreturn))
 static void halt_forever(void) {
@@ -26,8 +35,9 @@ static void halt_forever(void) {
 __attribute__((noreturn))
 void k_main(const struct VBE_Info *old_vbe_info_ptr, const struct VBE_ModeInfo *old_vbe_mode_info_ptr, uint32_t value) {
 
+    //Create a page for the frame buffer
     VBE_setup_infos(old_vbe_info_ptr, old_vbe_mode_info_ptr);
-
+    
     //Create a new GDT, so the kernel doesn't rely on the one in the bootloader
     gdt.entries[0] = GDT_create_zero_entry(); //The NULL descriptor
     gdt.entries[1] = GDT_create_entry(0x00000000, 0xfffff, (m_GDT_CODE_KERNEL));
@@ -41,7 +51,7 @@ void k_main(const struct VBE_Info *old_vbe_info_ptr, const struct VBE_ModeInfo *
 
     //Create a new IDT, since the one created by the boot loader was useless
     for (unsigned i = 0; i < 256; i++) {
-        idt.entries[i] = IDT_create_entry((uint32_t)INTERRUPT_default);
+        idt.entries[i] = IDT_create_entry((uint32_t)INTERRUPT_jump_table[i]);
     }
 
     //Setup the IDT descriptor
@@ -52,6 +62,13 @@ void k_main(const struct VBE_Info *old_vbe_info_ptr, const struct VBE_ModeInfo *
     __asm__("lidt %0\n" :: "m"(idt.descriptor));
     
     //Now the IDT and GDT are stored by the kernel, instead of the boot loader. That means the bootloader can safely be overwritten later if needed
+
+    //Create the framebuffer page table
+    PAGE_create_table(
+            (void*)(VBE_mode_info.framebuffer/m_PAGE_TABLE_SIZE*m_PAGE_TABLE_SIZE), (void*)m_FRAMEBUFFER_VIRTUAL_ADDRESS, (uint32_t*)((uint8_t*)framebuffer_page_table-0xc0000000),
+            (uint32_t*)0x5e000, 0x3, 0x3
+            );
+    k_printf("after framebuffer page table creation\n");
 
     //Clear the screen to black
     for (unsigned y = 0; y < VBE_mode_info.height; y++) {
@@ -64,7 +81,19 @@ void k_main(const struct VBE_Info *old_vbe_info_ptr, const struct VBE_ModeInfo *
     //Set up the memory map properly so it can later be used for memory allocation
     MEMORY_MAP_set_up();
 
+    PRINT_reset_cursor_pos();
+
+    uint32_t sp_value;
+    __asm__ volatile(
+            "mov %0, esp\n"
+            : "=r"(sp_value)
+            );
+    
     k_printf("kernel starts around %p\n", (void*)value);
+    k_printf("value = 0x%08lx\n", (unsigned long)*((uint32_t*)0xffc00000 + 0xa));
+    k_printf("other value = 0x%08lx\n", (unsigned long)*((uint32_t*)0x5e000));
+    k_printf("stack pointer = %p\n", (void*)sp_value);
+    k_printf("array = %p\n", (void*)framebuffer_page_table);
 
     k_printf("\nn memory map entries = %u. mem map descriptor ptr = %p\n\n", MEMORY_MAP_descriptor_ptr->n_entries, (void*)MEMORY_MAP_descriptor_ptr);
 
@@ -79,6 +108,13 @@ void k_main(const struct VBE_Info *old_vbe_info_ptr, const struct VBE_ModeInfo *
         k_printf("size (KiB) = %lu\n\n", (unsigned long)MEMORY_MAP_entries[i].length_lo/1024);
     }
 
+    /*
+    k_printf("Before allocation.\n");
+    PAGE_create((void*)0x100000, (void*)0x100000, (uint32_t*)0x5f000, (uint32_t*)0x5e000, 0x3, 0x3);
+    k_printf("After allocation.\n");
+    k_printf("accessing value: %d\n", *(int*)0x100000);
+    k_printf("after accessing value\n");*/
+    
     halt_forever();
 
 }

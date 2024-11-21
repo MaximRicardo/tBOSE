@@ -585,47 +585,43 @@ InitFirstPageTableLoop:
 
     ;Set the first entry in the page directory to point to the first page table
     mov dword[PAGE_DIRECTORY], PAGE_TABLE_1 | 3
-    ;Also, map the first 4 MiB of the upper half, to the lower half of the address space
+    ;Also, map the first 4 MiB of the upper part, to the lower part of the address space
     mov dword[(0xc0000000/(1024*1024*4))*4+PAGE_DIRECTORY], PAGE_TABLE_1 | 3
 
-    ;Now set up the framebuffer page table
-    mov edi, FRAMEBUFFER_PAGE_TABLE
-    mov ecx, 0
+%ifdef COMMENT
+        ;Now set up the framebuffer page table
+        mov edi, FRAMEBUFFER_PAGE_TABLE
+        mov ecx, 0
 
-    ;Move the address of the frame buffer, rounded down to closest 4 MiB multiple, into ebx
-    mov eax, [vbe_mode_info_struct.framebuffer]
-    mov ebx, (1024*1024*4)
-    xor edx, edx
-    div ebx
-    mul ebx
-    mov ebx, eax
+        ;Move the address of the frame buffer, rounded down to closest 4 MiB multiple, into ebx
+        mov eax, [vbe_mode_info_struct.framebuffer]
+        mov ebx, (1024*1024*4)
+        xor edx, edx
+        div ebx
+        mul ebx
+        mov ebx, eax
 
-    ;Move the address of the end of the frame buffer into esi
-    ;End of the framebuffer ptr = height*pitch + framebuffer_start - 1
-    mov eax, [vbe_mode_info_struct.height]
-    mov esi, [vbe_mode_info_struct.pitch]
-    mul esi  ;height*pitch
-    add eax, [vbe_mode_info_struct.framebuffer] ;+ framebuffer_start
-    mov esi, eax
-    dec esi ;- 1
+    InitFramebufferPageTableLoop:
 
-InitFramebufferPageTableLoop:
+        mov eax, 0x1000
+        mul ecx
+        add eax, ebx
 
-    mov eax, 0x1000
-    mul ecx
-    add eax, ebx
+        or eax, 0x7
+        mov dword[edi], eax ;Attributes: Accessible by everyone, Read/Write, Present
 
-    or eax, 3
-    mov dword[edi], eax
+        add edi, 4
+        inc ecx
 
-    add edi, 4
-    inc ecx
+        cmp ecx, 1024
+        jl InitFramebufferPageTableLoop
 
-    cmp ecx, 1024
-    jl InitFramebufferPageTableLoop
+        ;Map the frame buffer to virtual memory
+        ;mov dword[(FRAMEBUFFER_VIRTUAL_LOCATION/(1024*1024*4))*4+PAGE_DIRECTORY], FRAMEBUFFER_PAGE_TABLE | 0x7  ;Attributes: Accessible by everyone, Read/Write, Present
+%endif
 
-    ;Map the frame buffer to virtual memory
-    mov dword[(FRAMEBUFFER_VIRTUAL_LOCATION/(1024*1024*4))*4+PAGE_DIRECTORY], FRAMEBUFFER_PAGE_TABLE | 3
+    ;Map the last PDE to the page directory itself
+    mov dword[1023*4+PAGE_DIRECTORY], PAGE_DIRECTORY | 0x3  ;Only the kernel can access this
 
     ;Give cr3 the address of the page directory
     mov eax, PAGE_DIRECTORY
