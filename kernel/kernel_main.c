@@ -11,7 +11,6 @@
 #include "interrupts.h"
 #include "mem_map.h"
 #include "page.h"
-#include "constants.h"
 #include "phys_alloc.h"
 
 struct GDT gdt;
@@ -19,9 +18,8 @@ struct IDT idt;
 
 uint32_t *page_directory = (uint32_t*)0x5d000;
 
-//Maps the framebuffer to 0xf0000000
-__attribute__((aligned(4096)))
-uint32_t framebuffer_page_table[1024];
+#define m_PAGE_TABLES_TABLE_VIRTUAL_ADDRESS 0x400000  //Maps the second 4MiB chunk of virtual memory
+uint32_t *page_tables_table = (uint32_t*)0x5f000; //Look in low_mem_map.txt for context
 
 __attribute__((noreturn))
 static void halt_forever(void) {
@@ -33,7 +31,7 @@ static void halt_forever(void) {
 }
 
 __attribute__((noreturn))
-void k_main(const struct VBE_Info *old_vbe_info_ptr, const struct VBE_ModeInfo *old_vbe_mode_info_ptr, uint32_t value) {
+void k_main(const struct VBE_Info *old_vbe_info_ptr, const struct VBE_ModeInfo *old_vbe_mode_info_ptr) {
 
     //Create a page for the frame buffer
     VBE_setup_infos(old_vbe_info_ptr, old_vbe_mode_info_ptr);
@@ -63,12 +61,29 @@ void k_main(const struct VBE_Info *old_vbe_info_ptr, const struct VBE_ModeInfo *
     
     //Now the IDT and GDT are stored by the kernel, instead of the boot loader. That means the bootloader can safely be overwritten later if needed
 
-    //Create the framebuffer page table
-    PAGE_create_table(
-            (void*)(VBE_mode_info.framebuffer/m_PAGE_TABLE_SIZE*m_PAGE_TABLE_SIZE), (void*)m_FRAMEBUFFER_VIRTUAL_ADDRESS,
-            (uint32_t*)((uint8_t*)framebuffer_page_table-m_KERNEL_VIRTUAL_LOCATION), page_directory, 0x3, 0x3
-            );
-    k_printf("after framebuffer page table creation\n");
+    //Set up the memory map properly so it can later be used for memory allocation
+    MEMORY_MAP_set_up();
+    PHYS_ALLOC_init_bitmap();
+    
+    //Allocating the page tables table
+    for (unsigned i = 0; i < m_N_PAGES_IN_A_TABLE; i++) {
+        void *cur_page_base_ptr = PHYS_ALLOC_malloc_page();
+        page_tables_table[i] = (uint32_t)cur_page_base_ptr | 0x3;
+    }
+    page_directory[m_PAGE_TABLES_TABLE_VIRTUAL_ADDRESS/m_PAGE_TABLE_SIZE] = (uint32_t)page_tables_table | 0x3;
+    __asm__ volatile(
+            "mov eax, cr3\n"
+            "mov cr3, eax\n");
+
+    //Mapping the framebuffer to 0xf0000000
+    {
+        uint32_t *framebuffer_page_table_phys = (uint32_t*)(page_tables_table[1023] & -4096);
+        uint32_t *framebuffer_page_table_virt = (uint32_t*)(m_PAGE_TABLES_TABLE_VIRTUAL_ADDRESS+4096*1023);
+        PAGE_create_table(
+                (void*)(VBE_mode_info.framebuffer/m_PAGE_TABLE_SIZE*m_PAGE_TABLE_SIZE), (void*)m_FRAMEBUFFER_VIRTUAL_ADDRESS,
+                framebuffer_page_table_virt, framebuffer_page_table_phys, page_directory, 0x3, 0x3
+                );
+    }
 
     //Clear the screen to black
     for (unsigned y = 0; y < VBE_mode_info.height; y++) {
@@ -78,11 +93,6 @@ void k_main(const struct VBE_Info *old_vbe_info_ptr, const struct VBE_ModeInfo *
         }
     }
 
-    //Set up the memory map properly so it can later be used for memory allocation
-    MEMORY_MAP_set_up();
-
-    PHYS_ALLOC_init_bitmap();
-
     PRINT_reset_cursor_pos();
 
     uint32_t sp_value;
@@ -90,8 +100,7 @@ void k_main(const struct VBE_Info *old_vbe_info_ptr, const struct VBE_ModeInfo *
             "mov %0, esp\n"
             : "=r"(sp_value)
             );
-    
-    k_printf("kernel starts around %p\n", (void*)value);
+
     k_printf("value = 0x%08lx\n", (unsigned long)*((uint32_t*)0xffc00000 + 0xa));
     k_printf("other value = 0x%08lx\n", (unsigned long)*page_directory);
     k_printf("stack pointer = %p\n", (void*)sp_value);

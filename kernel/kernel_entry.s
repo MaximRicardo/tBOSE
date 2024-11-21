@@ -23,8 +23,6 @@ _start:
     fldcw [fcw]
 
     ;Jump into the kernel's main function (Which is actually written in C! Yay)
-    call GetEip
-    push eax
     push dword[vbe_mode_info_ptr]
     push dword[vbe_info_ptr]
     call k_main
@@ -34,10 +32,6 @@ _start:
 HaltLoop:
     hlt
     jmp HaltLoop
-
-GetEip:
-    mov eax, [esp]
-    ret
 
 segment .rodata
 fcw: dw 0x037f

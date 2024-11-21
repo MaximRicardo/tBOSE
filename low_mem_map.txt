@@ -1,0 +1,10 @@
+0x0-0x4ff:                  Unusable
+0x500-depends:              Memory map loaded by the bootloader's second stage
+0x1000-0x6000:              Kernel
+0x7d00-0x8600:              Bootloader
+0x5d00-0x5dff:              Page directory
+0x5e00-0x5eff:              First kernel page table (maps 0x00000000 to 0xc0000000), aswell as low memory page table (identity maps the first 4MiB of memory)
+0x5f00-0x5fff:              Page table used to store all other page tables. Creates a 4 MiB region of virtual memory where all page tables can be stored.
+0x6000-0x6ffff:             Unused free memory
+0x70000-0x7ffff:            Used by the stack
+0x80000-0xfffff:            Unusable

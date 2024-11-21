@@ -7,6 +7,7 @@ struct MEMORY_MAP_Descriptor *MEMORY_MAP_descriptor_ptr = (struct MEMORY_MAP_Des
 struct MEMORY_MAP_Entry *MEMORY_MAP_entries = (struct MEMORY_MAP_Entry*)(m_MEMORY_MAP_BASE_ADDRESS+sizeof(struct MEMORY_MAP_Descriptor));
 
 //Zeroes-out the entry
+//NOTE: DON'T PRINT ANYTHING FROM THIS FUNCTION, SINCE IT MIGHT BE CALLED BEFORE THE FRAMEBUFFER HAS BEEN MAPPED IN VIRTUAL MEMORY
 static void clear_entry(struct MEMORY_MAP_Entry *entry_ptr) {
     
     entry_ptr->base_lo = 0;
@@ -18,6 +19,7 @@ static void clear_entry(struct MEMORY_MAP_Entry *entry_ptr) {
 
 }
 
+//NOTE: DON'T PRINT ANYTHING FROM THIS FUNCTION, SINCE IT MIGHT BE CALLED BEFORE THE FRAMEBUFFER HAS BEEN MAPPED IN VIRTUAL MEMORY
 static void limit_entries_to_4_GiB() {
 
     for (unsigned i = 0; i < MEMORY_MAP_descriptor_ptr->n_entries; i++) {
@@ -40,6 +42,7 @@ static void limit_entries_to_4_GiB() {
 
 }
 
+//NOTE: DON'T PRINT ANYTHING FROM THIS FUNCTION, SINCE IT MIGHT BE CALLED BEFORE THE FRAMEBUFFER HAS BEEN MAPPED IN VIRTUAL MEMORY
 void MEMORY_MAP_set_up() {
 
     //Deal with regions extending past 4GiB first.

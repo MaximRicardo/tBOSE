@@ -1,9 +1,10 @@
 #include "phys_alloc.h"
 #include "mem_map.h"
-#include "print.h"
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
+
+//NOTE: DON'T PRINT ANYTHING HERE SINCE THESE FUNCTIONS MAY BE CALLED BEFORE THE FRAMEBUFFER HAS BEEN MAPPED IN VIRTUAL MEMORY
 
 //3221225472B = 3GiB
 #define m_MEM_BITMAP_SIZE (3221225472/4096/8)

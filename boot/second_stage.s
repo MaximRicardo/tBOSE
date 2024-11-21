@@ -15,9 +15,6 @@ DATA_SEG equ GDT_DataDescriptor - GDT_Start
 %define PAGE_DIRECTORY 0x5d000
 %define PAGE_TABLE_1 0x5e000
 
-;Gets aligned to 4 MiB
-%define FRAMEBUFFER_VIRTUAL_LOCATION 0xf0000000
-
 segment .text
 
 SecondStageStart:
@@ -584,40 +581,8 @@ InitFirstPageTableLoop:
 
     ;Set the first entry in the page directory to point to the first page table
     mov dword[PAGE_DIRECTORY], PAGE_TABLE_1 | 3
-    ;Also, map the first 4 MiB of the upper part, to the lower part of the address space
+    ;Also, map the first 4 MiB of the 3rd GiB of mem, to the lower part of the address space
     mov dword[(0xc0000000/(1024*1024*4))*4+PAGE_DIRECTORY], PAGE_TABLE_1 | 3
-
-%ifdef COMMENT
-        ;Now set up the framebuffer page table
-        mov edi, FRAMEBUFFER_PAGE_TABLE
-        mov ecx, 0
-
-        ;Move the address of the frame buffer, rounded down to closest 4 MiB multiple, into ebx
-        mov eax, [vbe_mode_info_struct.framebuffer]
-        mov ebx, (1024*1024*4)
-        xor edx, edx
-        div ebx
-        mul ebx
-        mov ebx, eax
-
-    InitFramebufferPageTableLoop:
-
-        mov eax, 0x1000
-        mul ecx
-        add eax, ebx
-
-        or eax, 0x7
-        mov dword[edi], eax ;Attributes: Accessible by everyone, Read/Write, Present
-
-        add edi, 4
-        inc ecx
-
-        cmp ecx, 1024
-        jl InitFramebufferPageTableLoop
-
-        ;Map the frame buffer to virtual memory
-        ;mov dword[(FRAMEBUFFER_VIRTUAL_LOCATION/(1024*1024*4))*4+PAGE_DIRECTORY], FRAMEBUFFER_PAGE_TABLE | 0x7  ;Attributes: Accessible by everyone, Read/Write, Present
-%endif
 
     ;Map the last PDE to the page directory itself
     mov dword[1023*4+PAGE_DIRECTORY], PAGE_DIRECTORY | 0x3  ;Only the kernel can access this
