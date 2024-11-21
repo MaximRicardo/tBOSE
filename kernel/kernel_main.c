@@ -11,15 +11,15 @@
 #include "interrupts.h"
 #include "mem_map.h"
 #include "page.h"
+#include "constants.h"
+#include "phys_alloc.h"
 
 struct GDT gdt;
 struct IDT idt;
 
-uint32_t *page_directory = (uint32_t*)0x5e000;
+uint32_t *page_directory = (uint32_t*)0x5d000;
 
 //Maps the framebuffer to 0xf0000000
-//uint32_t *framebuffer_page_table = (uint32_t*)0x5d000;
-//uint32_t *framebuffer_page_table = (uint32_t*)0x100000;
 __attribute__((aligned(4096)))
 uint32_t framebuffer_page_table[1024];
 
@@ -65,8 +65,8 @@ void k_main(const struct VBE_Info *old_vbe_info_ptr, const struct VBE_ModeInfo *
 
     //Create the framebuffer page table
     PAGE_create_table(
-            (void*)(VBE_mode_info.framebuffer/m_PAGE_TABLE_SIZE*m_PAGE_TABLE_SIZE), (void*)m_FRAMEBUFFER_VIRTUAL_ADDRESS, (uint32_t*)((uint8_t*)framebuffer_page_table-0xc0000000),
-            (uint32_t*)0x5e000, 0x3, 0x3
+            (void*)(VBE_mode_info.framebuffer/m_PAGE_TABLE_SIZE*m_PAGE_TABLE_SIZE), (void*)m_FRAMEBUFFER_VIRTUAL_ADDRESS,
+            (uint32_t*)((uint8_t*)framebuffer_page_table-m_KERNEL_VIRTUAL_LOCATION), page_directory, 0x3, 0x3
             );
     k_printf("after framebuffer page table creation\n");
 
@@ -81,6 +81,8 @@ void k_main(const struct VBE_Info *old_vbe_info_ptr, const struct VBE_ModeInfo *
     //Set up the memory map properly so it can later be used for memory allocation
     MEMORY_MAP_set_up();
 
+    PHYS_ALLOC_init_bitmap();
+
     PRINT_reset_cursor_pos();
 
     uint32_t sp_value;
@@ -91,9 +93,12 @@ void k_main(const struct VBE_Info *old_vbe_info_ptr, const struct VBE_ModeInfo *
     
     k_printf("kernel starts around %p\n", (void*)value);
     k_printf("value = 0x%08lx\n", (unsigned long)*((uint32_t*)0xffc00000 + 0xa));
-    k_printf("other value = 0x%08lx\n", (unsigned long)*((uint32_t*)0x5e000));
+    k_printf("other value = 0x%08lx\n", (unsigned long)*page_directory);
     k_printf("stack pointer = %p\n", (void*)sp_value);
-    k_printf("array = %p\n", (void*)framebuffer_page_table);
+    void *page = PHYS_ALLOC_malloc_page();
+    k_printf("allocated page = %p\n", page);
+    PHYS_ALLOC_free_page(page);
+    k_printf("allocated page = %p\n", PHYS_ALLOC_malloc_page());
 
     k_printf("\nn memory map entries = %u. mem map descriptor ptr = %p\n\n", MEMORY_MAP_descriptor_ptr->n_entries, (void*)MEMORY_MAP_descriptor_ptr);
 

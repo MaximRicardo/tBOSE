@@ -46,3 +46,20 @@ void MEMORY_MAP_set_up() {
     limit_entries_to_4_GiB();
 
 }
+
+unsigned MEMORY_MAP_region_type(uint32_t location) {
+
+    for (unsigned i = 0; i < MEMORY_MAP_descriptor_ptr->n_entries; i++) {
+        struct MEMORY_MAP_Entry *current_entry_ptr = &MEMORY_MAP_entries[i];
+
+        uint32_t current_entry_start = current_entry_ptr->base_lo;
+        uint32_t current_entry_end = current_entry_ptr->base_lo + current_entry_ptr->length_lo - 1;
+        bool location_in_cur_entry = current_entry_start <= location && location <= current_entry_end;
+        if (!location_in_cur_entry) continue;
+
+        return current_entry_ptr->type;
+    }
+
+    return 0;
+
+}
