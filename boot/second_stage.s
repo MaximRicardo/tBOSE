@@ -63,8 +63,10 @@ KernelLoadError:
 
 KernelLoadSuccess:
 
-    mov ax, 640 ;The preferred screen width is 640 pixels
-    mov bx, 480 ;The preferred screen height is 480 pixels
+    ;mov ax, 640 ;The preferred screen width is 640 pixels
+    ;mov bx, 480 ;The preferred screen height is 480 pixels
+    mov ax, 1280  ;The preferred screen width
+    mov bx, 720   ;The preferred screen height
     mov cl, 32  ;The preferred BPP is 32 bits / 4 bytes
     call vbe_set_mode
     jc VESANotSupported

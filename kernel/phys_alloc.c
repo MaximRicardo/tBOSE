@@ -6,13 +6,13 @@
 
 //NOTE: DON'T PRINT ANYTHING HERE SINCE THESE FUNCTIONS MAY BE CALLED BEFORE THE FRAMEBUFFER HAS BEEN MAPPED IN VIRTUAL MEMORY
 
-//3221225472B = 3GiB
-#define m_MEM_BITMAP_SIZE (3221225472/4096/8)
+//4294967296B = 4GiB
+#define m_MEM_BITMAP_SIZE (4294967296/4096/8)
 
-//Bitmap over the first 3GB of main memory
+//Bitmap over the entire 4GiB of main memory
 //Each bit in the bitmap corresponds to a 4KiB page in physical memory. If the bit is clear, then that specific page is free, else it is occupied.
 //The 0th bit is the 0th page, 1st bit is the 1st page, 2nd bit is the 2nd page, etc.
-uint8_t *mem_bitmap = (uint8_t*)0x7e00;
+uint8_t *mem_bitmap = (uint8_t*)0x6000;
 
 void PHYS_ALLOC_init_bitmap(void) {
 

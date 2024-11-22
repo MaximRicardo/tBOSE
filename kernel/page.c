@@ -5,8 +5,8 @@
 
 static void update_pages(void) {
     __asm__ volatile(
-            "mov eax, cr3\n"
-            "mov cr3, eax\n");
+            "mov %cr3, %eax\n"
+            "mov %eax, %cr3\n");
 }
 
 /*
