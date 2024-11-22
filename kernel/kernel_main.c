@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <cpuid.h>
+#include <string.h>
 
 #include "color.h"
 #include "vbe.h"
@@ -157,17 +158,16 @@ void k_main(const struct VBE_Info *old_vbe_info_ptr, const struct VBE_ModeInfo *
             : "=r"(sp_value)
             );
 
-    void *ptr = VIRT_ALLOC_malloc_page(10, 0x1, true);
-    k_printf("allocated page = %p, n_allocs = %u\n", ptr, *((uint32_t*)ptr-1));
-    VIRT_ALLOC_free_page(ptr);
-    k_printf("allocated page = %p\n", VIRT_ALLOC_malloc_page(10, 0x1, true));
+    char *str = k_calloc(10, sizeof(*str), 0x1, true);
+    k_printf("str = \"%s\", str = %p\n", str, (void*)str);
+    strcpy(str, "hello!");
+    k_printf("str = \"%s\", str = %p\n", str, (void*)str);
+    str = k_realloc(str, 100, 0x1, true);
+    k_printf("str = \"%s\", str = %p\n", str, (void*)str);
+
     k_printf("value = 0x%08lx\n", (unsigned long)*((uint32_t*)0xffc00000 + 0xa));
     k_printf("msr supported: %s\n", msr_supported() ? "true" : "false");
     k_printf("stack pointer = %p\n", (void*)sp_value);
-    void *page = PHYS_ALLOC_malloc_page();
-    k_printf("allocated page = %p\n", page);
-    PHYS_ALLOC_free_page(page);
-    k_printf("allocated page = %p\n", PHYS_ALLOC_malloc_page());
 
     k_printf("\nn memory map entries = %u. mem map descriptor ptr = %p\n\n", MEMORY_MAP_descriptor_ptr->n_entries, (void*)MEMORY_MAP_descriptor_ptr);
 

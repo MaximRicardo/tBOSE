@@ -51,3 +51,15 @@ int memcmp(const void *s1, const void *s2, size_t n) {
 
     return 0;
 }
+
+char *strcpy(char *restrict dest, const char *restrict src) {
+
+    size_t i = 0;
+    while (src[i] != '\0') {
+        dest[i] = src[i];
+        ++i;
+    }
+
+    return dest;
+
+}
