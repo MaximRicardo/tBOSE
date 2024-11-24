@@ -17,12 +17,14 @@ _start:
 
     mov [vbe_info_ptr], eax
     mov [vbe_mode_info_ptr], ebx
+    mov [boot_disk], ecx
 
     ;init the FPU
     fninit
     fldcw [fcw]
 
     ;Jump into the kernel's main function (Which is actually written in C! Yay)
+    push dword[boot_disk]
     push dword[vbe_mode_info_ptr]
     push dword[vbe_info_ptr]
     call k_main
@@ -40,3 +42,4 @@ segment .data
 
 vbe_info_ptr: dd 0
 vbe_mode_info_ptr: dd 0
+boot_disk:  dd 0

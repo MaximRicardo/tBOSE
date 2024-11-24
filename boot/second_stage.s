@@ -518,7 +518,7 @@ EnterProtectedMode:
     mov eax, cr0
     or eax, 1
     mov cr0, eax
-    ;Far jump to the protected mode code
+    ;Far jump to the protected mode code, also selectes the kernel code selector in the GDT
     jmp CODE_SEG:ProtectedModeStart
     ;Make sure the instruction prefetch is cleared by filling it with NOPs
     nop
@@ -532,6 +532,7 @@ EnterProtectedMode:
 ;########################################################
 ProtectedModeStart:
     ;Setup segment registers and the stack
+    ;The cs register is already set
     mov ax, DATA_SEG
     mov ds, ax
     mov ss, ax
@@ -601,6 +602,8 @@ InitFirstPageTableLoop:
     ;Arguments to pass to the kernel
     lea eax, [vbe_info_struct]  ;eax holds a pointer to the vbe_info
     lea ebx, [vbe_mode_info_struct] ;ebx holds a pointer to holds the vbe_mode_info
+    xor ecx, ecx
+    mov cl, [BOOT_DISK]  ;ecx holds the boot disk, so the kernel knows where to load stuff in from floppy.
 
     jmp 0xc0000000 + KERNEL_LOCATION ;Enter the kernel (Finally!)
 

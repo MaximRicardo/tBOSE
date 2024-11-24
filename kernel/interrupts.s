@@ -1,6 +1,8 @@
 [bits 32]
 
 extern INTERRUPT_default_handler
+extern INTERRUPT_pit_int_handler
+extern INTERRUPT_others_handler
 
 section .text.interrupts
 
@@ -36,6 +38,10 @@ global INTERRUPT_28
 global INTERRUPT_29
 global INTERRUPT_30
 global INTERRUPT_31
+
+global INTERRUPT_32
+
+global INTERRUPT_others
 
 ;Pushes every register the interrupt handler might modify
 %macro m_PUSH_HANDLER_MODIFIED_REGS 0
@@ -116,9 +122,7 @@ INTERRUPT_30:
 INTERRUPT_31:
     inc dword[int_num]
 
-    push ebp
-
-    m_PUSH_HANDLER_MODIFIED_REGS
+    pushad
 
     mov eax, 32
     sub eax, [int_num]
@@ -127,9 +131,27 @@ INTERRUPT_31:
     call INTERRUPT_default_handler
     add esp, 4
 
-    m_POP_HANDLER_MODIFIED_REGS
+    popad
 
-    pop ebp
+    jmp HaltLoop
+
+INTERRUPT_32:
+
+    pushad
+
+    call INTERRUPT_pit_int_handler
+
+    popad
+
+    iret
+
+INTERRUPT_others:
+
+    pushad
+
+    call INTERRUPT_others_handler
+
+    popad
 
     jmp HaltLoop
 

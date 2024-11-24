@@ -32,5 +32,7 @@ void INTERRUPT_28(void);
 void INTERRUPT_29(void);
 void INTERRUPT_30(void);
 void INTERRUPT_31(void);
+void INTERRUPT_32(void);
+void INTERRUPT_others(void);
 
 extern void (*INTERRUPT_jump_table[256])(void);

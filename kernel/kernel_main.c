@@ -18,6 +18,9 @@
 #include "virt_alloc.h"
 #include "kernel_options.h"
 #include "tss.h"
+#include "pic.h"
+#include "pit.h"
+#include "io.h"
 
 struct GDT gdt;
 struct IDT idt;
@@ -26,6 +29,8 @@ struct TSS tss;
 uint32_t *page_directory = (uint32_t*)0x5d000;
 
 uint32_t *page_tables_table = (uint32_t*)0x5f000; //Look in low_mem_map.txt for context
+
+uint32_t boot_disk;
 
 __attribute__((noreturn))
 static void halt_forever(void) {
@@ -94,7 +99,9 @@ __attribute__((noreturn))
 void k_main_setup_done();
 
 __attribute__((noreturn))
-void k_main(const struct VBE_Info *old_vbe_info_ptr, const struct VBE_ModeInfo *old_vbe_mode_info_ptr) {
+void k_main(const struct VBE_Info *old_vbe_info_ptr, const struct VBE_ModeInfo *old_vbe_mode_info_ptr, uint32_t boot_disk_arg) {
+
+    boot_disk = boot_disk_arg;
 
     //Create a page for the frame buffer
     VBE_setup_infos(old_vbe_info_ptr, old_vbe_mode_info_ptr);
@@ -122,10 +129,9 @@ void k_main(const struct VBE_Info *old_vbe_info_ptr, const struct VBE_ModeInfo *
     idt.descriptor.size = 2048; //The IDT table is 2048 bytes large (8 bytes per entry * 256 entries)
     idt.descriptor.base = (uint32_t)(&idt.entries[0]);  //Starts at the first entry
 
-    //Set the new IDT as the current IDT. Also interrupts can now be enabled
+    //Set the new IDT as the current IDT. Interrupts cannot be enabled yet because of the PIT.
     __asm__ volatile(
             "lidt %0\n"
-            //"sti\n"
             :
             : "m"(idt.descriptor)
             );
@@ -254,6 +260,16 @@ void k_main(const struct VBE_Info *old_vbe_info_ptr, const struct VBE_ModeInfo *
             "int $0x10\n"
             );*/
 
+    //Init the PIC
+    PIC_init();
+
+    //Setup the PIT so it sends an interrupt approximately every millisecond
+    IO_out_port_b(0x43, 0x34);
+    IO_out_port_b(0x40, m_PIT_RESET_TIME & 0xff);
+    IO_out_port_b(0x40, (m_PIT_RESET_TIME >> 8) & 0xff);
+
+    __asm__ volatile ("sti\n");
+
     //Jumps into k_main_setup_done
     __asm__ volatile(
             "mov %0, %%esp\n"
@@ -285,7 +301,7 @@ void k_main_setup_done() {
     k_printf("str = \"%s\", str = %p\n", str, (void*)str);
     k_free(str);
 
-    k_printf("value = 0x%08lx\n", (unsigned long)*((uint32_t*)0xffc00000 + 0xa));
+    k_printf("OS boot disk = %u\n", boot_disk);
     k_printf("msr supported: %s\n", msr_supported() ? "true" : "false");
     k_printf("stack pointer = %p\n", (void*)sp_value);
 
