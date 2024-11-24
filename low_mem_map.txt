@@ -3,26 +3,25 @@ BEFORE KERNEL SETUP:
 0x0-0x4ff:                  Unusable
 0x500-depends:              Memory map loaded by the bootloader's second stage
 0x1000-0x5fff:              Kernel
-0x6000-0x7cff:              Unused free memory
+0x6000-0x7cff:              Free for use
 0x7d00-0x85ff:              Bootloader
-0x8600-0x5cfff:             Unused free memory
+0x8600-0x5cfff:             Free for use
 0x5d000-0x5dfff:            Page directory
 0x5e000-0x5efff:            First kernel page table (maps 0x00000000 to 0xc0000000), aswell as low memory page table (identity maps the first 4MiB of memory)
 0x5f000-0x5ffff:            Page table used to store all other page tables. Creates a 4 MiB region of virtual memory where all page tables can be stored.
-0x60000-0x6ffff:            Unused free memory
+0x60000-0x6ffff:            Free for use
 0x70000-0x7ffff:            Used by the stack
 0x80000-0xfffff:            Unusable
 
 AFTER KERNEL SETUP:
 
 0x0-0x4ff:                  Unusable
-0x500-depends:              Memory map loaded by the bootloader's second stage
+0x500-0xfff:                Free for use
 0x1000-0x5fff:              Kernel
 0x6000-0x25fff:             Physical memory bitmap
-0x26000-0x5cfff:            Unused free memory
+0x26000-0x5cfff:            Free for use
 0x5d000-0x5dfff:            Page directory
-0x5e000-0x5efff:            Unused free memory
+0x5e000-0x5efff:            Free for use
 0x5f000-0x5ffff:            Page table used to store all other page tables. Creates a 4 MiB region of virtual memory where all page tables can be stored.
-0x60000-0x6ffff:            Unused free memory
-0x70000-0x7ffff:            Used by the stack
+0x60000-0x7ffff:            Free for use
 0x80000-0xfffff:            Unusable

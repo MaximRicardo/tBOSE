@@ -3,31 +3,29 @@
 
 #include "mem_map.h"
 
-struct MEMORY_MAP_Descriptor *MEMORY_MAP_descriptor_ptr = (struct MEMORY_MAP_Descriptor*)m_MEMORY_MAP_BASE_ADDRESS;
+struct MEMORY_MAP_Descriptor *MEMORY_MAP_descriptor = (struct MEMORY_MAP_Descriptor*)m_MEMORY_MAP_BASE_ADDRESS;
 struct MEMORY_MAP_Entry *MEMORY_MAP_entries = (struct MEMORY_MAP_Entry*)(m_MEMORY_MAP_BASE_ADDRESS+sizeof(struct MEMORY_MAP_Descriptor));
 
-//Zeroes-out the entry
 //NOTE: DON'T PRINT ANYTHING FROM THIS FUNCTION, SINCE IT MIGHT BE CALLED BEFORE THE FRAMEBUFFER HAS BEEN MAPPED IN VIRTUAL MEMORY
-static void clear_entry(struct MEMORY_MAP_Entry *entry_ptr) {
-    
-    entry_ptr->base_lo = 0;
-    entry_ptr->base_hi = 0;
-    entry_ptr->length_hi = 0;
-    entry_ptr->length_lo = 0;
-    entry_ptr->type = 0;
-    entry_ptr->unused_field = 0;
+static void remove_entry(size_t idx) {
+
+    for (size_t i = idx+1; i < MEMORY_MAP_descriptor->n_entries; i++) {
+        MEMORY_MAP_entries[i-1] = MEMORY_MAP_entries[i];
+    }
+
+    --MEMORY_MAP_descriptor->n_entries;
 
 }
 
 //NOTE: DON'T PRINT ANYTHING FROM THIS FUNCTION, SINCE IT MIGHT BE CALLED BEFORE THE FRAMEBUFFER HAS BEEN MAPPED IN VIRTUAL MEMORY
 static void limit_entries_to_4_GiB() {
 
-    for (unsigned i = 0; i < MEMORY_MAP_descriptor_ptr->n_entries; i++) {
+    for (unsigned i = 0; i < MEMORY_MAP_descriptor->n_entries; i++) {
         struct MEMORY_MAP_Entry *current_entry_ptr = &MEMORY_MAP_entries[i];
         
         //Clear the entry if it starts past 4GiB into the address space
         if (current_entry_ptr->base_hi != 0) {
-            clear_entry(current_entry_ptr);
+            remove_entry(i);
             continue;
         }
 
@@ -52,7 +50,7 @@ void MEMORY_MAP_set_up() {
 
 unsigned MEMORY_MAP_region_type(uint32_t location) {
 
-    for (unsigned i = 0; i < MEMORY_MAP_descriptor_ptr->n_entries; i++) {
+    for (unsigned i = 0; i < MEMORY_MAP_descriptor->n_entries; i++) {
         struct MEMORY_MAP_Entry *current_entry_ptr = &MEMORY_MAP_entries[i];
 
         uint32_t current_entry_start = current_entry_ptr->base_lo;
@@ -64,5 +62,22 @@ unsigned MEMORY_MAP_region_type(uint32_t location) {
     }
 
     return 0;
+
+}
+
+size_t MEMORY_MAP_available_mem() {
+
+    size_t size = 0;
+
+    for (unsigned i = 0; i < MEMORY_MAP_descriptor->n_entries; i++) {
+        struct MEMORY_MAP_Entry *cur_entry = &MEMORY_MAP_entries[i];
+
+        if (cur_entry->type != m_MEMORY_MAP_ENTRY_FREE_TYPE)
+            continue;
+
+        size += cur_entry->length_lo;
+    }
+
+    return size;
 
 }

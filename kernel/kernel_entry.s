@@ -17,7 +17,7 @@ _start:
 
     mov [vbe_info_ptr], eax
     mov [vbe_mode_info_ptr], ebx
-    
+
     ;init the FPU
     fninit
     fldcw [fcw]

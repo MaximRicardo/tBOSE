@@ -540,7 +540,7 @@ ProtectedModeStart:
     mov gs, ax
 
     ;Put the stack at the top of the free memory in the low memory region
-    ;128 KiB of space before the stack starts overwriting the page tables
+    ;64 KiB of space before the stack starts overwriting stuff
     mov ebp, 0x80000
     mov esp, ebp
     
@@ -604,6 +604,5 @@ InitFirstPageTableLoop:
 
     jmp 0xc0000000 + KERNEL_LOCATION ;Enter the kernel (Finally!)
 
-;Make the stage exactly 2 sectors large
 ;This makes it easier to load in the kernel, since this makes the start of the kernel always be at a multiple of 512 bytes in disk
 times 512*SECOND_STAGE_SIZE_IN_SECTORS-($-$$) db 0

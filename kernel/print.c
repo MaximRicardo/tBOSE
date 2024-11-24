@@ -47,6 +47,17 @@ static size_t get_str_len(const char *str) {
     return len;
 }
 
+//Flips the frame buffer on one line.
+//cursor_y is the y position the text cursor has to have to be on that line
+static void flip_line_scr_buffer(unsigned cursor_y) {
+
+    unsigned start_y = (CHAR_BITMAP_bitmap_height+1)*cursor_y;
+    unsigned end_y = (CHAR_BITMAP_bitmap_height+1)*(cursor_y+1) - 1;
+
+    PIXEL_partially_flip_buffer(0, start_y, VBE_mode_info.width, end_y);
+
+}
+
 void PRINT_char(char c, unsigned char_x, unsigned char_y) {
 
     //If c is not a character, return
@@ -62,8 +73,18 @@ void PRINT_char(char c, unsigned char_x, unsigned char_y) {
 
         for (unsigned x = 0; x < CHAR_BITMAP_bitmap_width; x++) {
             unsigned pixel = (row >> (CHAR_BITMAP_bitmap_width-x-1)) & 1; //Get the bit opposite of the xth bit of the row as the pixel data
-            if (pixel == 0) PIXEL_plot_norm_rgb(x+char_x, y+char_y, background_color);
-            else PIXEL_plot_norm_rgb(x+char_x, y+char_y, foreground_color);
+            if (pixel == 0) {
+                if (PIXEL_back_buffer == NULL)
+                    PIXEL_plot_norm_rgb(x+char_x, y+char_y, background_color);
+                else
+                    PIXEL_back_buffer[VBE_mode_info.width*(y+char_y)+(x+char_x)] = background_color;
+            }
+            else {
+                if (PIXEL_back_buffer == NULL)
+                    PIXEL_plot_norm_rgb(x+char_x, y+char_y, foreground_color);
+                else
+                    PIXEL_back_buffer[VBE_mode_info.width*(y+char_y)+(x+char_x)] = foreground_color;
+            }
         }
     }
 
@@ -76,12 +97,14 @@ void PRINT_reset_cursor_pos() {
 
 }
 
+//Doesn't flip the frame buffer
 void k_putchar(char c) {
 
     if (c == '\r') {
         move_cursor_down();
     }
     else if (c == '\n' || c == '\r') {
+        flip_line_scr_buffer(PRINT_cursor_y);
         PRINT_cursor_x = 0;
         move_cursor_down();
     }

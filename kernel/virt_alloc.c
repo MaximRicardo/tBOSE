@@ -5,10 +5,15 @@
 #include <stdbool.h>
 #include <time.h>
 
-/*
-//4294967296B = 4GiB
-#define m_N_PAGES (4294967296/4096)
-*/
+static void invalidate_tlb_entry(void *virt_address) {
+
+    __asm__ volatile(
+            "invlpg %[virt_address]"
+            :
+            : [virt_address] "m" (virt_address)
+            );
+
+}
 
 void *VIRT_ALLOC_malloc_page(size_t n, uint32_t flags, bool use_kernel_space) {
 
@@ -39,7 +44,21 @@ void *VIRT_ALLOC_malloc_page(size_t n, uint32_t flags, bool use_kernel_space) {
 
         for (size_t look_ahead = 0; look_ahead < n; look_ahead++) {
             //Use recursive paging to change the address the page maps to
-            recursive_paging[i+look_ahead] = (uint32_t)PHYS_ALLOC_malloc_page() | flags;
+            uint32_t phys_location = (uint32_t)PHYS_ALLOC_malloc_page();
+            if (phys_location != 0) {
+                recursive_paging[i+look_ahead] = phys_location | flags;
+                //Update the cache
+                invalidate_tlb_entry((void*)((i+look_ahead)*4096));
+            }
+            else if (look_ahead > 0) {
+                for (size_t go_back = look_ahead-1; go_back < look_ahead; go_back--) {
+                    recursive_paging[i+go_back] &= ~1;
+                    invalidate_tlb_entry((void*)((i+go_back)*4096));
+                }
+                return NULL;
+            }
+            else
+                return NULL;
         }
 
         uint32_t page_base = i*4096;
@@ -61,6 +80,8 @@ void VIRT_ALLOC_free_page(void *ptr) {
     for (size_t n = 0; n < n_pages_to_free; n++) {
         recursive_paging[page_idx+n] &= ~1;
         PHYS_ALLOC_free_page((void*)(recursive_paging[page_idx+n] & -4096));
+        //Update the cache
+        invalidate_tlb_entry((void*)((page_idx+n)*4096));
     }
 
 }

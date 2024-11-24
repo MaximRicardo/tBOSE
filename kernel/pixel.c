@@ -5,6 +5,8 @@
 #include "color.h"
 #include "vbe.h"
 
+struct COLOR_rgb *PIXEL_back_buffer = NULL;
+
 void PIXEL_plot(unsigned x, unsigned y, uint32_t color) {
 
     uint8_t *const screen_ptr = (uint8_t*)m_FRAMEBUFFER_VIRTUAL_ADDRESS;
@@ -33,5 +35,24 @@ void PIXEL_plot_norm_rgb(unsigned x, unsigned y, struct COLOR_rgb color) {
     color_u32 |= b_channel << VBE_mode_info.blue_position;
 
     PIXEL_plot(x, y, color_u32);
+
+}
+
+void PIXEL_partially_flip_buffer(unsigned x_start, unsigned y_start, unsigned x_end, unsigned y_end) {
+
+    if (PIXEL_back_buffer == NULL)
+        return;
+
+    for (unsigned y = y_start; y <= y_end; y++) {
+        for (unsigned x = x_start; x <= x_end; x++) {
+            PIXEL_plot_norm_rgb(x, y, PIXEL_back_buffer[VBE_mode_info.width*y+x]);
+        }
+    }
+
+}
+
+void PIXEL_flip_buffer(void) {
+
+    PIXEL_partially_flip_buffer(0, 0, VBE_mode_info.width-1, VBE_mode_info.height-1);
 
 }

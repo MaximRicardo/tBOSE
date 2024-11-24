@@ -7,7 +7,7 @@
  * Manages the different segments of code (A segment for Kernel Space, A segment for User Space, etc..)
  */
 
-#define m_N_GDT_ENTRIES 3
+#define m_N_GDT_ENTRIES 6
 
 #define m_SEGDESCTYPE(x)  ((x) << 0x04) // Descriptor type (0 for system, 1 for code/data)
 #define m_SEGPRES(x)      ((x) << 0x07) // Present
@@ -41,6 +41,14 @@
 #define m_GDT_DATA_KERNEL   m_SEGDESCTYPE(1) | m_SEGPRES(1) | m_SEGSAVL(0) | \
                             m_SEGLONG(0)     | m_SEGSIZE(1) | m_SEGGRAN(1) | \
                             m_SEGPRIV(0)     | m_SEGDATA_RDWR
+
+#define m_GDT_CODE_USER     m_SEGDESCTYPE(1) | m_SEGPRES(1) | m_SEGSAVL(0) | \
+                            m_SEGLONG(0)     | m_SEGSIZE(1) | m_SEGGRAN(1) | \
+                            m_SEGPRIV(3)     | m_SEGCODE_EXRD
+
+#define m_GDT_DATA_USER     m_SEGDESCTYPE(1) | m_SEGPRES(1) | m_SEGSAVL(0) | \
+                            m_SEGLONG(0)     | m_SEGSIZE(1) | m_SEGGRAN(1) | \
+                            m_SEGPRIV(3)     | m_SEGDATA_RDWR
  
 struct GDT_Entry {
     uint16_t limit_bits_0_15;

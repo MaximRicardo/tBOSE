@@ -1,5 +1,3 @@
-
-
 #include "char_bitmap.h"
 
 unsigned CHAR_BITMAP_bitmap_width = 7;
