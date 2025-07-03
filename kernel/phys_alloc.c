@@ -20,7 +20,7 @@
 //page, etc.
 static uint8_t *mem_bitmap = (uint8_t *)0x6000;
 
-void PHYS_ALLOC_init_bitmap(void)
+void PhysAlloc_init_bitmap(void)
 {
 	memset(mem_bitmap, 0, m_MEM_BITMAP_SIZE);
 }
@@ -49,7 +49,7 @@ static void mark_page_free(size_t page_idx)
 	mem_bitmap[mem_bitmap_idx] &= ~((uint8_t)1 << bit_idx);
 }
 
-void *PHYS_ALLOC_malloc_page(void)
+void *PhysAlloc_malloc_page(void)
 {
 	//low mem is skipped, because it is used for various things that should
 	//not be overwritten.
@@ -60,7 +60,7 @@ void *PHYS_ALLOC_malloc_page(void)
 		uint32_t page_base = i * 4096;
 
 		//some might call this slow. i say stfu.
-		if (MEMORY_MAP_region_type(page_base) !=
+		if (MemoryMap_region_type(page_base) !=
 		    m_MEMORY_MAP_ENTRY_FREE_TYPE)
 			continue;
 
@@ -72,7 +72,7 @@ void *PHYS_ALLOC_malloc_page(void)
 	return NULL;
 }
 
-void PHYS_ALLOC_free_page(void *ptr)
+void PhysAlloc_free_page(void *ptr)
 {
 	mark_page_free((uint32_t)ptr / m_PAGE_SIZE);
 }

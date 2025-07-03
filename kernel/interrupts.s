@@ -1,46 +1,46 @@
 [bits 32]
 
-extern INTERRUPT_default_handler
-extern INTERRUPT_pit_int_handler
-extern INTERRUPT_others_handler
+extern Interrupt_default_handler
+extern Interrupt_pit_int_handler
+extern Interrupt_others_handler
 
 section .text.interrupts
 
-global INTERRUPT_0
-global INTERRUPT_1
-global INTERRUPT_2
-global INTERRUPT_3
-global INTERRUPT_4
-global INTERRUPT_5
-global INTERRUPT_6
-global INTERRUPT_7
-global INTERRUPT_8
-global INTERRUPT_9
-global INTERRUPT_10
-global INTERRUPT_11
-global INTERRUPT_12
-global INTERRUPT_13
-global INTERRUPT_14
-global INTERRUPT_15
-global INTERRUPT_16
-global INTERRUPT_17
-global INTERRUPT_18
-global INTERRUPT_19
-global INTERRUPT_20
-global INTERRUPT_21
-global INTERRUPT_22
-global INTERRUPT_23
-global INTERRUPT_24
-global INTERRUPT_25
-global INTERRUPT_26
-global INTERRUPT_27
-global INTERRUPT_28
-global INTERRUPT_29
-global INTERRUPT_30
-global INTERRUPT_31
-global INTERRUPT_32
+global Interrupt_0
+global Interrupt_1
+global Interrupt_2
+global Interrupt_3
+global Interrupt_4
+global Interrupt_5
+global Interrupt_6
+global Interrupt_7
+global Interrupt_8
+global Interrupt_9
+global Interrupt_10
+global Interrupt_11
+global Interrupt_12
+global Interrupt_13
+global Interrupt_14
+global Interrupt_15
+global Interrupt_16
+global Interrupt_17
+global Interrupt_18
+global Interrupt_19
+global Interrupt_20
+global Interrupt_21
+global Interrupt_22
+global Interrupt_23
+global Interrupt_24
+global Interrupt_25
+global Interrupt_26
+global Interrupt_27
+global Interrupt_28
+global Interrupt_29
+global Interrupt_30
+global Interrupt_31
+global Interrupt_32
 
-global INTERRUPT_others
+global Interrupt_others
 
 ;Pushes every register the interrupt handler might modify
 %macro m_PUSH_HANDLER_MODIFIED_REGS 0
@@ -56,69 +56,69 @@ global INTERRUPT_others
     pop eax
 %endmacro
 
-INTERRUPT_0:
+Interrupt_0:
     inc dword[int_num]
-INTERRUPT_1:
+Interrupt_1:
     inc dword[int_num]
-INTERRUPT_2:
+Interrupt_2:
     inc dword[int_num]
-INTERRUPT_3:
+Interrupt_3:
     inc dword[int_num]
-INTERRUPT_4:
+Interrupt_4:
     inc dword[int_num]
-INTERRUPT_5:
+Interrupt_5:
     inc dword[int_num]
-INTERRUPT_6:
+Interrupt_6:
     inc dword[int_num]
-INTERRUPT_7:
+Interrupt_7:
     inc dword[int_num]
-INTERRUPT_8:
+Interrupt_8:
     inc dword[int_num]
-INTERRUPT_9:
+Interrupt_9:
     inc dword[int_num]
-INTERRUPT_10:
+Interrupt_10:
     inc dword[int_num]
-INTERRUPT_11:
+Interrupt_11:
     inc dword[int_num]
-INTERRUPT_12:
+Interrupt_12:
     inc dword[int_num]
-INTERRUPT_13:
+Interrupt_13:
     inc dword[int_num]
-INTERRUPT_14:
+Interrupt_14:
     inc dword[int_num]
-INTERRUPT_15:
+Interrupt_15:
     inc dword[int_num]
-INTERRUPT_16:
+Interrupt_16:
     inc dword[int_num]
-INTERRUPT_17:
+Interrupt_17:
     inc dword[int_num]
-INTERRUPT_18:
+Interrupt_18:
     inc dword[int_num]
-INTERRUPT_19:
+Interrupt_19:
     inc dword[int_num]
-INTERRUPT_20:
+Interrupt_20:
     inc dword[int_num]
-INTERRUPT_21:
+Interrupt_21:
     inc dword[int_num]
-INTERRUPT_22:
+Interrupt_22:
     inc dword[int_num]
-INTERRUPT_23:
+Interrupt_23:
     inc dword[int_num]
-INTERRUPT_24:
+Interrupt_24:
     inc dword[int_num]
-INTERRUPT_25:
+Interrupt_25:
     inc dword[int_num]
-INTERRUPT_26:
+Interrupt_26:
     inc dword[int_num]
-INTERRUPT_27:
+Interrupt_27:
     inc dword[int_num]
-INTERRUPT_28:
+Interrupt_28:
     inc dword[int_num]
-INTERRUPT_29:
+Interrupt_29:
     inc dword[int_num]
-INTERRUPT_30:
+Interrupt_30:
     inc dword[int_num]
-INTERRUPT_31:
+Interrupt_31:
     inc dword[int_num]
 
     pushad
@@ -127,28 +127,28 @@ INTERRUPT_31:
     sub eax, [int_num]
     push eax
     push dword[ebp+4] ;Pass the address where the interrupt happened as an argument. This works by using the return address on the stack
-    call INTERRUPT_default_handler
+    call Interrupt_default_handler
     add esp, 4
 
     popad
 
     jmp HaltLoop
 
-INTERRUPT_32:
+Interrupt_32:
 
     pushad
 
-    call INTERRUPT_pit_int_handler
+    call Interrupt_pit_int_handler
 
     popad
 
     iret
 
-INTERRUPT_others:
+Interrupt_others:
 
     pushad
 
-    call INTERRUPT_others_handler
+    call Interrupt_others_handler
 
     popad
 

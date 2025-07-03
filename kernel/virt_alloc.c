@@ -39,7 +39,7 @@ static bool allocate_pages(uint32_t start_idx, uint32_t n, uint32_t flags)
 
 	for (size_t look_ahead = 0; look_ahead < n; look_ahead++) {
 		//Use recursive paging to change the address the page maps to
-		uint32_t phys_location = (uint32_t)PHYS_ALLOC_malloc_page();
+		uint32_t phys_location = (uint32_t)PhysAlloc_malloc_page();
 		if (phys_location != 0) {
 			recursive_paging[start_idx + look_ahead] =
 				phys_location | flags;
@@ -65,7 +65,7 @@ static bool allocate_pages(uint32_t start_idx, uint32_t n, uint32_t flags)
 	return true;
 }
 
-void *VIRT_ALLOC_malloc_page(size_t n, uint32_t flags, bool use_kernel_space)
+void *VirtAlloc_malloc_page(size_t n, uint32_t flags, bool use_kernel_space)
 {
 	if (n == 0)
 		return NULL;
@@ -95,7 +95,7 @@ void *VIRT_ALLOC_malloc_page(size_t n, uint32_t flags, bool use_kernel_space)
 	return NULL;
 }
 
-void VIRT_ALLOC_free_page(void *ptr)
+void VirtAlloc_free_page(void *ptr)
 {
 	uint32_t *recursive_paging = (uint32_t *)0xffc00000;
 
@@ -104,7 +104,7 @@ void VIRT_ALLOC_free_page(void *ptr)
 
 	for (size_t n = 0; n < n_pages_to_free; n++) {
 		recursive_paging[page_idx + n] &= ~1;
-		PHYS_ALLOC_free_page(
+		PhysAlloc_free_page(
 			(void *)(recursive_paging[page_idx + n] & -4096));
 		//Update the cache
 		invalidate_tlb_entry((void *)((page_idx + n) * 4096));
@@ -115,14 +115,14 @@ void *k_malloc(size_t n, uint32_t flags, bool use_kernel_space)
 {
 	size_t n_pages = (n + 4) % 4096 != 0 ? (n + 4) / 4096 + 1 :
 					       (n + 4) / 4096;
-	return VIRT_ALLOC_malloc_page(n_pages, flags, use_kernel_space);
+	return VirtAlloc_malloc_page(n_pages, flags, use_kernel_space);
 }
 
 void k_free(void *ptr)
 {
 	if (ptr == NULL)
 		return;
-	VIRT_ALLOC_free_page(ptr);
+	VirtAlloc_free_page(ptr);
 }
 
 void *k_calloc(size_t n_memb, size_t memb_size, uint32_t flags,

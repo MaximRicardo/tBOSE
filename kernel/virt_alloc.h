@@ -12,11 +12,11 @@
  * The first 4 bytes of the first page contain the number of consecutively allocated pages
  * NOTE: If the present bit is off in flags, the CPU will throw a page fault!
  */
-void *VIRT_ALLOC_malloc_page(size_t n, uint32_t flags, bool use_kernel_space);
+void *VirtAlloc_malloc_page(size_t n, uint32_t flags, bool use_kernel_space);
 
 //Disables the page entry's present bit.
 //Will also attempt to free NULL pointers, unlike k_free().
-void VIRT_ALLOC_free_page(void *ptr);
+void VirtAlloc_free_page(void *ptr);
 
 void *k_malloc(size_t n, uint32_t flags, bool use_kernel_space);
 void *k_calloc(size_t n_memb, size_t memb_size, uint32_t flags,

@@ -1,9 +1,9 @@
 #include "char_bitmap.h"
 
-unsigned CHAR_BITMAP_bitmap_width = 7;
-unsigned CHAR_BITMAP_bitmap_height = 13;
+unsigned CharBitmap_width = 7;
+unsigned CharBitmap_height = 13;
 
-uint8_t CHAR_BITMAP_bitmaps[95][13] = {
+uint8_t CharBitmap_bitmaps[95][13] = {
 	/*
      * code=32, hex=0x20, ascii=" "
      */

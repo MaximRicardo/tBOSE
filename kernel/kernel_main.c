@@ -109,7 +109,7 @@ static void create_gdt(void)
 					  (uint32_t)&tss + sizeof(struct TSS),
 					  0xe9); //TSS
 
-	gdt.descriptor.size = m_N_GDT_ENTRIES * sizeof(struct GDT_Entry);
+	gdt.descriptor.size = m_N_GDT_ENTRIES * sizeof(struct GDTEntry);
 	gdt.descriptor.base = (uint32_t)gdt.entries;
 
 	__asm__("lgdt %0\n" ::"m"(gdt.descriptor));
@@ -120,7 +120,7 @@ static void create_idt(void)
 {
 	for (uint32_t i = 0; i < 256; i++) {
 		idt.entries[i] =
-			IDT_create_entry((uint32_t)INTERRUPT_jump_table[i]);
+			IDT_create_entry((uint32_t)Interrupt_jump_table[i]);
 	}
 
 	idt.descriptor.size = m_IDT_SIZE;
@@ -134,20 +134,20 @@ static void create_idt(void)
 static void alloc_page_tables_table(void)
 {
 	for (unsigned i = 0; i < m_N_PAGES_IN_A_TABLE; i++) {
-		void *cur_page_base_ptr = PHYS_ALLOC_malloc_page();
+		void *cur_page_base_ptr = PhysAlloc_malloc_page();
 		page_tables_table[i] = (uint32_t)cur_page_base_ptr |
-				       m_PAGEFLAG_rw;
+				       m_PAGE_FLAG_rw;
 	}
 
 	uint32_t idx = m_PAGE_TABLES_TABLE_VIRTUAL_ADDRESS / m_PAGE_TABLE_SIZE;
-	page_directory[idx] = (uint32_t)page_tables_table | m_PAGEFLAG_rw;
+	page_directory[idx] = (uint32_t)page_tables_table | m_PAGE_FLAG_rw;
 
 	//refreshes the tlb
 	__asm__ volatile("mov %cr3, %eax\n"
 			 "mov %eax, %cr3\n");
 }
 
-static void add_write_combine_cache()
+static void add_write_combine_cache(void)
 {
 	if (msr_supported()) {
 		uint32_t lo, hi;
@@ -184,7 +184,7 @@ static void alloc_normal_p_tables(void)
 		uint32_t page_dir_flags = page_table_base < 0xc0000000 ? 0x7 :
 									 0x7;
 
-		PAGE_create_table((void *)page_table_base,
+		Page_create_table((void *)page_table_base,
 				  (void *)page_table_base, page_table_virt,
 				  page_table_phys, page_directory, 0x0,
 				  page_dir_flags);
@@ -196,7 +196,7 @@ static void ident_map_low_mem(void)
 	uint32_t *page_table_phys = (uint32_t *)(page_tables_table[0] & -4096);
 	uint32_t *page_table_virt =
 		(uint32_t *)m_PAGE_TABLES_TABLE_VIRTUAL_ADDRESS;
-	PAGE_create_table((void *)0, (void *)0x0, page_table_virt,
+	Page_create_table((void *)0, (void *)0x0, page_table_virt,
 			  page_table_phys, page_directory, 0x3, 0x3);
 }
 
@@ -209,10 +209,10 @@ static void alloc_kernel_page(void)
 		(uint32_t *)(page_tables_table[768] & -4096);
 	uint32_t *page_table_virt =
 		(uint32_t *)(m_PAGE_TABLES_TABLE_VIRTUAL_ADDRESS + 4096 * 768);
-	//PAGE_create_table((void*)0, (void*)0xc0000000, page_table_virt, page_table_phys, page_directory, 0x3, 0x3);
+	//Page_create_table((void*)0, (void*)0xc0000000, page_table_virt, page_table_phys, page_directory, 0x3, 0x3);
 	//don't know why i'm using this version, but past me made this decision
 	//and i think he's trustworthy.
-	PAGE_create_table((void *)0, (void *)0xc0000000, page_table_virt,
+	Page_create_table((void *)0, (void *)0xc0000000, page_table_virt,
 			  page_table_phys, page_directory, 0x7, 0x7);
 }
 
@@ -230,7 +230,7 @@ static void map_framebuffer_page(void)
 	uint32_t floored_base = VBE_mode_info.framebuffer / m_PAGE_TABLE_SIZE *
 				m_PAGE_TABLE_SIZE;
 
-	PAGE_create_table((void *)floored_base,
+	Page_create_table((void *)floored_base,
 			  (void *)m_FRAMEBUFFER_VIRTUAL_ADDRESS,
 			  framebuffer_page_table_virt,
 			  framebuffer_page_table_phys, page_directory,
@@ -252,10 +252,10 @@ static void clear_scr(void)
 {
 	for (unsigned y = 0; y < VBE_mode_info.height; y++) {
 		for (unsigned x = 0; x < VBE_mode_info.width; x++) {
-			struct COLOR_rgb pixel_color = { .r = 0.f,
-							 .g = 0.f,
-							 .b = 0.f };
-			PIXEL_plot_norm_rgb(x, y, pixel_color);
+			struct ColorRGB pixel_color = { .r = 0.f,
+							.g = 0.f,
+							.b = 0.f };
+			Pixel_plot_norm_rgb(x, y, pixel_color);
 		}
 	}
 }
@@ -265,9 +265,9 @@ static void clear_scr(void)
 static void move_mem_map(void)
 {
 	void *new_memory_map_ptr =
-		k_malloc(MEMORY_MAP_descriptor->n_entries *
-					 sizeof(struct MEMORY_MAP_Entry) +
-				 sizeof(struct MEMORY_MAP_Descriptor),
+		k_malloc(MemoryMap_descriptor->n_entries *
+					 sizeof(struct MemoryMapEntry) +
+				 sizeof(struct MemoryMapDescriptor),
 			 0x3, true);
 	if (new_memory_map_ptr == NULL) {
 		k_printf("ERROR: Couldn't allocate memory map!\n");
@@ -275,28 +275,26 @@ static void move_mem_map(void)
 	}
 
 	//Copying over the descriptor
-	*(struct MEMORY_MAP_Descriptor *)new_memory_map_ptr =
-		*MEMORY_MAP_descriptor;
+	*(struct MemoryMapDescriptor *)new_memory_map_ptr =
+		*MemoryMap_descriptor;
 
 	//Copying over the entries
-	struct MEMORY_MAP_Entry *new_entries =
-		(struct MEMORY_MAP_Entry
-			 *)((uint8_t *)new_memory_map_ptr +
-			    sizeof(struct MEMORY_MAP_Descriptor));
+	struct MemoryMapEntry *new_entries =
+		(struct MemoryMapEntry *)((uint8_t *)new_memory_map_ptr +
+					  sizeof(struct MemoryMapDescriptor));
 
-	memcpy(new_entries, MEMORY_MAP_entries,
-	       MEMORY_MAP_descriptor->n_entries *
-		       sizeof(struct MEMORY_MAP_Entry));
+	memcpy(new_entries, MemoryMap_entries,
+	       MemoryMap_descriptor->n_entries * sizeof(struct MemoryMapEntry));
 
-	MEMORY_MAP_descriptor = new_memory_map_ptr;
-	MEMORY_MAP_entries = new_entries;
+	MemoryMap_descriptor = new_memory_map_ptr;
+	MemoryMap_entries = new_entries;
 }
 
 static void alloc_back_buffer(void)
 {
-	PIXEL_back_buffer = k_calloc(VBE_mode_info.width * VBE_mode_info.height,
-				     sizeof(*PIXEL_back_buffer), 0x7, false);
-	if (PIXEL_back_buffer == NULL) {
+	Pixel_back_buffer = k_calloc(VBE_mode_info.width * VBE_mode_info.height,
+				     sizeof(*Pixel_back_buffer), 0x7, false);
+	if (Pixel_back_buffer == NULL) {
 		k_printf("ERROR: Couldn't allocate the back buffer!\n");
 		halt_forever();
 	}
@@ -304,7 +302,7 @@ static void alloc_back_buffer(void)
 
 static void *alloc_kernel_stack(void)
 {
-	void *ptr = k_malloc(m_KERNEL_STACK_SIZE, m_PAGEFLAG_rw, true);
+	void *ptr = k_malloc(m_KERNEL_STACK_SIZE, m_PAGE_FLAG_rw, true);
 	if (!ptr) {
 		k_printf("ERROR: Couldn't allocate the kernel stack!\n");
 		halt_forever();
@@ -345,8 +343,8 @@ static void init_pit(void)
 /* essentially just sets everything up and removes any dependencies on
  * the bootloader so it can safely be overwritten later if needed. */
 __attribute__((noreturn)) void
-k_main(const struct VBE_Info *old_vbe_info,
-       const struct VBE_ModeInfo *old_vbe_mode_info, uint32_t boot_disk_arg)
+k_main(const struct VBEInfo *old_vbe_info,
+       const struct VBEModeInfo *old_vbe_mode_info, uint32_t boot_disk_arg)
 {
 	boot_disk = boot_disk_arg;
 
@@ -359,15 +357,15 @@ k_main(const struct VBE_Info *old_vbe_info,
 
 	add_write_combine_cache();
 
-	MEMORY_MAP_set_up();
-	PHYS_ALLOC_init_bitmap();
+	MemoryMap_set_up();
+	PhysAlloc_init_bitmap();
 	setup_pages();
 
 	move_mem_map();
 
 	clear_scr();
 
-	PRINT_reset_cursor_pos();
+	Print_reset_cursor_pos();
 
 	alloc_back_buffer();
 
@@ -393,8 +391,8 @@ k_main(const struct VBE_Info *old_vbe_info,
 
 static void print_mem_map(void)
 {
-	for (uint32_t i = 0; i < MEMORY_MAP_descriptor->n_entries; i++) {
-		const struct MEMORY_MAP_Entry *entry = &MEMORY_MAP_entries[i];
+	for (uint32_t i = 0; i < MemoryMap_descriptor->n_entries; i++) {
+		const struct MemoryMapEntry *entry = &MemoryMap_entries[i];
 
 		k_printf("ENTRY #%u\n", i);
 		k_printf("base lo = 0x%lx ", (unsigned long)entry->base_lo);
@@ -430,12 +428,11 @@ __attribute__((noreturn)) void k_main_setup_done(void)
 	k_printf("stack pointer = %p\n", (void *)sp_value);
 
 	k_printf("\nn memory map entries = %u. mem map descriptor ptr = %p\n\n",
-		 MEMORY_MAP_descriptor->n_entries,
-		 (void *)MEMORY_MAP_descriptor);
+		 MemoryMap_descriptor->n_entries, (void *)MemoryMap_descriptor);
 	print_mem_map();
 
 	k_printf("%uMiB of free memory detected.\n",
-		 MEMORY_MAP_available_mem() / 1024 / 1024);
+		 MemoryMap_available_mem() / 1024 / 1024);
 
 	ATA_soft_reset(&ATA_device);
 

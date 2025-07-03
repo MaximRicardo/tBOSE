@@ -19,9 +19,9 @@
 
 #define m_N_IDT_ENTRIES 256
 
-#define m_IDT_SIZE (m_N_IDT_ENTRIES * sizeof(struct IDT_Entry))
+#define m_IDT_SIZE (m_N_IDT_ENTRIES * sizeof(struct IDTEntry))
 
-struct IDT_Entry {
+struct IDTEntry {
 	uint16_t base_lo;
 	uint16_t sel;
 	uint8_t always_0;
@@ -30,16 +30,16 @@ struct IDT_Entry {
 } __attribute__((packed));
 
 //Describes the IDT itself. Is passed as the argument to "lidt"
-struct IDT_Descriptor {
+struct IDTDescriptor {
 	uint16_t size;
 	uint32_t base;
 } __attribute__((packed));
 
 //Contains everything needed for an IDT
 struct IDT {
-	struct IDT_Entry entries[m_N_IDT_ENTRIES];
-	struct IDT_Descriptor descriptor;
+	struct IDTEntry entries[m_N_IDT_ENTRIES];
+	struct IDTDescriptor descriptor;
 } __attribute__((packed));
 
-struct IDT_Entry IDT_create_entry(uint32_t base);
-struct IDT_Entry IDT_create_zero_entry(void); //Returns a zeroed-out IDT entry
+struct IDTEntry IDT_create_entry(uint32_t base);
+struct IDTEntry IDT_create_zero_entry(void); //Returns a zeroed-out IDT entry

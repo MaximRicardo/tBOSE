@@ -32,4 +32,4 @@ struct TSS {
 	uint16_t iomap;
 } __attribute__((packed));
 
-void TSS_update();
+void TSS_update(void);

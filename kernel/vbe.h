@@ -4,7 +4,7 @@
 #include <stdbool.h>
 
 //Info about the VBE supported by the video card
-struct VBE_Info {
+struct VBEInfo {
 	char signature[4]; // must be "VESA" to indicate valid VBE support
 	uint16_t version; // VBE version; high byte is major version, low byte is minor version
 	uint32_t oem; // segment:offset pointer to OEM
@@ -20,7 +20,7 @@ struct VBE_Info {
 };
 
 //Info about the current VESA mode
-struct VBE_ModeInfo {
+struct VBEModeInfo {
 	uint16_t attributes; // deprecated, only bit 7 should be of interest to you, and it indicates the mode supports a linear frame buffer.
 	uint8_t window_a; // deprecated
 	uint8_t window_b; // deprecated
@@ -52,16 +52,16 @@ struct VBE_ModeInfo {
 	uint8_t reserved_position;
 	uint8_t direct_color_attributes;
 
-	uint32_t framebuffer; // physical address of the linear frame buffer. Do NOT write here to draw to the screen, Use m_FRAMEBUFFER_VIRTUAL_ADDRESS as the pointer instead!
+	uint32_t framebuffer; // physical address of the linear frame buffer. Do NOT write here to draw to the screen, use m_FRAMEBUFFER_VIRTUAL_ADDRESS as the pointer instead.
 	uint32_t off_screen_mem_off;
 	uint16_t off_screen_mem_size; // size of memory in the framebuffer but not being displayed on the screen
 	uint8_t reserved1[206];
 };
 
 extern bool VBE_info_has_been_set;
-extern struct VBE_Info VBE_info;
-extern struct VBE_ModeInfo VBE_mode_info;
+extern struct VBEInfo VBE_info;
+extern struct VBEModeInfo VBE_mode_info;
 
 //copies the source vbe infos into VBE_info, and VBE_mode_info
-void VBE_setup_infos(const struct VBE_Info *src_info,
-		     const struct VBE_ModeInfo *src_mode_info);
+void VBE_setup_infos(const struct VBEInfo *src_info,
+		     const struct VBEModeInfo *src_mode_info);

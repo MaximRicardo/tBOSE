@@ -2,9 +2,9 @@
 
 #include "gdt.h"
 
-struct GDT_Entry GDT_create_entry(uint32_t base, uint32_t limit, uint16_t flags)
+struct GDTEntry GDT_create_entry(uint32_t base, uint32_t limit, uint16_t flags)
 {
-	struct GDT_Entry gdt_entry;
+	struct GDTEntry gdt_entry;
 
 	//each GDT entry is exactly 8 bytes large
 	//-fno-strict-aliasing, god bless u
@@ -23,9 +23,9 @@ struct GDT_Entry GDT_create_entry(uint32_t base, uint32_t limit, uint16_t flags)
 	return gdt_entry;
 }
 
-struct GDT_Entry GDT_create_zero_entry(void)
+struct GDTEntry GDT_create_zero_entry(void)
 {
-	struct GDT_Entry gdt_entry;
+	struct GDTEntry gdt_entry;
 
 	uint64_t *entry = (uint64_t *)(&gdt_entry);
 	*entry = 0;

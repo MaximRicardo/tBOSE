@@ -17,8 +17,8 @@
  * from civilization as possible, lest calamity befall all of us.
  */
 
-uint32_t PRINT_cursor_x = 0;
-uint32_t PRINT_cursor_y = 0;
+uint32_t Print_cursor_x = 0;
+uint32_t Print_cursor_y = 0;
 
 static uint32_t round_up(uint32_t num, uint32_t multiple)
 {
@@ -36,40 +36,40 @@ static uint32_t round_up(uint32_t num, uint32_t multiple)
 
 static uint32_t cursor_x_max(void)
 {
-	return VBE_mode_info.width / (CHAR_BITMAP_bitmap_width + 1) - 1;
+	return VBE_mode_info.width / (CharBitmap_width + 1) - 1;
 }
 
 static uint32_t cursor_y_max(void)
 {
-	return VBE_mode_info.height / (CHAR_BITMAP_bitmap_height + 1) - 1;
+	return VBE_mode_info.height / (CharBitmap_height + 1) - 1;
 }
 
 static uint32_t cursor_x_to_scr_x(void)
 {
 	//One pixel of empty space between characters
-	return (CHAR_BITMAP_bitmap_width + 1) * PRINT_cursor_x;
+	return (CharBitmap_width + 1) * Print_cursor_x;
 }
 
 static uint32_t cursor_y_to_scr_y(void)
 {
 	//One pixel of empty space between characters
-	return (CHAR_BITMAP_bitmap_height + 1) * PRINT_cursor_y;
+	return (CharBitmap_height + 1) * Print_cursor_y;
 }
 
 static void move_cursor_down(void)
 {
-	if (PRINT_cursor_y < cursor_y_max())
-		++PRINT_cursor_y;
+	if (Print_cursor_y < cursor_y_max())
+		++Print_cursor_y;
 	else
-		PRINT_cursor_y = 0;
+		Print_cursor_y = 0;
 }
 
 static void move_cursor_up(void)
 {
-	if (PRINT_cursor_y > 0)
-		--PRINT_cursor_y;
+	if (Print_cursor_y > 0)
+		--Print_cursor_y;
 	else
-		PRINT_cursor_y = cursor_y_max();
+		Print_cursor_y = cursor_y_max();
 }
 
 static size_t get_str_len(const char *str)
@@ -84,61 +84,61 @@ static size_t get_str_len(const char *str)
 //cursor_y is the y position the text cursor has to have to be on that line
 static void flip_line_scr_buffer(unsigned cursor_y)
 {
-	unsigned start_y = (CHAR_BITMAP_bitmap_height + 1) * cursor_y;
-	unsigned end_y = (CHAR_BITMAP_bitmap_height + 1) * (cursor_y + 1) - 1;
+	unsigned start_y = (CharBitmap_height + 1) * cursor_y;
+	unsigned end_y = (CharBitmap_height + 1) * (cursor_y + 1) - 1;
 
-	PIXEL_partially_flip_buffer(0, start_y, VBE_mode_info.width, end_y);
+	Pixel_partially_flip_buffer(0, start_y, VBE_mode_info.width, end_y);
 }
 
 /* renders directly to the front buffer if the back buffer isn't available. */
 static void plot_char_pixel(char c, uint32_t char_x, uint32_t char_y, size_t x,
-			    size_t y, const struct COLOR_rgb *foreground,
-			    const struct COLOR_rgb *background)
+			    size_t y, const struct ColorRGB *foreground,
+			    const struct ColorRGB *background)
 {
 	size_t bitmap_idx = c - 32;
-	uint8_t row = CHAR_BITMAP_bitmaps[bitmap_idx][y];
+	uint8_t row = CharBitmap_bitmaps[bitmap_idx][y];
 
 	//the character bitmaps are horizontally mirrored
-	unsigned pixel = (row >> (CHAR_BITMAP_bitmap_width - x - 1)) & 1;
+	unsigned pixel = (row >> (CharBitmap_width - x - 1)) & 1;
 
 	if (pixel == 0) {
-		if (!PIXEL_back_buffer)
-			PIXEL_plot_norm_rgb(x + char_x, y + char_y,
+		if (!Pixel_back_buffer)
+			Pixel_plot_norm_rgb(x + char_x, y + char_y,
 					    *background);
 		else
-			PIXEL_back_buffer[VBE_mode_info.width * (y + char_y) +
+			Pixel_back_buffer[VBE_mode_info.width * (y + char_y) +
 					  (x + char_x)] = *background;
 	} else {
-		if (!PIXEL_back_buffer)
-			PIXEL_plot_norm_rgb(x + char_x, y + char_y,
+		if (!Pixel_back_buffer)
+			Pixel_plot_norm_rgb(x + char_x, y + char_y,
 					    *foreground);
 		else
-			PIXEL_back_buffer[VBE_mode_info.width * (y + char_y) +
+			Pixel_back_buffer[VBE_mode_info.width * (y + char_y) +
 					  (x + char_x)] = *foreground;
 	}
 }
 
-void PRINT_char(char c, unsigned char_x, unsigned char_y)
+void Print_char(char c, unsigned char_x, unsigned char_y)
 {
 	//If c is not a character, return
 	if (c > 126 || c < 32)
 		return;
 
-	struct COLOR_rgb foreground_color = { 1.f, 1.f, 1.f };
-	struct COLOR_rgb background_color = { 0.f, 0.f, 0.f };
+	struct ColorRGB foreground_color = { 1.f, 1.f, 1.f };
+	struct ColorRGB background_color = { 0.f, 0.f, 0.f };
 
-	for (uint32_t y = 0; y < CHAR_BITMAP_bitmap_height; y++) {
-		for (uint32_t x = 0; x < CHAR_BITMAP_bitmap_width; x++) {
+	for (uint32_t y = 0; y < CharBitmap_height; y++) {
+		for (uint32_t x = 0; x < CharBitmap_width; x++) {
 			plot_char_pixel(c, char_x, char_y, x, y,
 					&foreground_color, &background_color);
 		}
 	}
 }
 
-void PRINT_reset_cursor_pos()
+void Print_reset_cursor_pos(void)
 {
-	PRINT_cursor_x = 0;
-	PRINT_cursor_y = 0;
+	Print_cursor_x = 0;
+	Print_cursor_y = 0;
 }
 
 //Doesn't flip the frame buffer
@@ -147,33 +147,33 @@ void k_putchar(char c)
 	if (c == '\0') {
 		return;
 	} else if (c == '\r') {
-		PRINT_cursor_x = 0;
+		Print_cursor_x = 0;
 	} else if (c == '\n') {
-		flip_line_scr_buffer(PRINT_cursor_y);
-		PRINT_cursor_x = 0;
+		flip_line_scr_buffer(Print_cursor_y);
+		Print_cursor_x = 0;
 		move_cursor_down();
 	} else if (c == '\b') {
-		if (PRINT_cursor_x > 0)
-			--PRINT_cursor_x;
+		if (Print_cursor_x > 0)
+			--Print_cursor_x;
 		else {
-			PRINT_cursor_x = cursor_x_max();
+			Print_cursor_x = cursor_x_max();
 			move_cursor_up();
 		}
 	} else if (c == '\t') {
 		//the +1 is to make sure the cursor goes to the next tab if it
 		//is already on one.
-		PRINT_cursor_x = round_up(PRINT_cursor_x + 1, 8);
+		Print_cursor_x = round_up(Print_cursor_x + 1, 8);
 
-		if (PRINT_cursor_x > cursor_x_max()) {
-			PRINT_cursor_x = 0;
+		if (Print_cursor_x > cursor_x_max()) {
+			Print_cursor_x = 0;
 			move_cursor_down();
 		}
 	} else {
-		PRINT_char(c, cursor_x_to_scr_x(), cursor_y_to_scr_y());
-		if (PRINT_cursor_x < cursor_x_max())
-			++PRINT_cursor_x;
+		Print_char(c, cursor_x_to_scr_x(), cursor_y_to_scr_y());
+		if (Print_cursor_x < cursor_x_max())
+			++Print_cursor_x;
 		else {
-			PRINT_cursor_x = 0;
+			Print_cursor_x = 0;
 			move_cursor_down();
 		}
 	}

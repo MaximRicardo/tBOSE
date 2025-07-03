@@ -2,9 +2,9 @@
 
 #include "idt.h"
 
-struct IDT_Entry IDT_create_entry(uint32_t base)
+struct IDTEntry IDT_create_entry(uint32_t base)
 {
-	struct IDT_Entry entry;
+	struct IDTEntry entry;
 
 	entry.base_lo = (uint16_t)(base & 0xffff);
 	entry.base_hi = (uint16_t)((base >> 16) & 0xffff);
@@ -15,9 +15,9 @@ struct IDT_Entry IDT_create_entry(uint32_t base)
 	return entry;
 }
 
-struct IDT_Entry IDT_create_zero_entry(void)
+struct IDTEntry IDT_create_zero_entry(void)
 {
-	struct IDT_Entry entry;
+	struct IDTEntry entry;
 
 	entry.base_lo = 0;
 	entry.sel = 0;

@@ -14,9 +14,9 @@
 /*
  * Creates a table of 1024 pages, totaling in 4 MiB covered.
  * table_start              - where the page table maps to in physical memory.
- *                            MUST be aligned to m_PAGE_TABLE_SIZE.
+ *                            MUST be aligned to m_Page_TABLE_SIZE.
  * table_virtual_address    - where the page table maps to in virtual memory.
- *                            MUST be aligned to m_PAGE_TABLE_SIZE.
+ *                            MUST be aligned to m_Page_TABLE_SIZE.
  * page_table               - pointer to the start of the page table to be
  *                            initialized.
  * page_table_phys_address  - pointer to the start of the page table in
@@ -26,7 +26,7 @@
  * page_dir_flags           - flags the relevant page directory entry should
  *                            have.
  */
-void PAGE_create_table(const void *table_start,
+void Page_create_table(const void *table_start,
 		       const void *table_virtual_address, uint32_t *page_table,
 		       uint32_t *page_table_phys_address, uint32_t *page_dir,
 		       uint32_t page_flags, uint32_t page_dir_flags);

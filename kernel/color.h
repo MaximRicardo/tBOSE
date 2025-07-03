@@ -1,6 +1,6 @@
 #pragma once
 
 //Normalized RGB color
-struct COLOR_rgb {
+struct ColorRGB {
 	float r, g, b;
 };

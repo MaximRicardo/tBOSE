@@ -3,7 +3,7 @@
 #include "timer.h"
 #include <stdint.h>
 
-void INTERRUPT_default_handler(void *p, unsigned int_type)
+void Interrupt_default_handler(void *p, unsigned int_type)
 {
 	uint32_t esp;
 	__asm__ volatile("mov %%esp, %0\n" : "=r"(esp));
@@ -12,13 +12,13 @@ void INTERRUPT_default_handler(void *p, unsigned int_type)
 		 esp);
 }
 
-void INTERRUPT_pit_int_handler(void)
+void Interrupt_pit_int_handler(void)
 {
-	++TIMER_n_ms;
+	++Timer_n_ms;
 	PIC_send_eoi(32);
 }
 
-void INTERRUPT_others_handler(void)
+void Interrupt_others_handler(void)
 {
 	k_printf("MISC INTERRUPT!\n");
 }

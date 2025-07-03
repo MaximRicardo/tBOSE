@@ -17,7 +17,7 @@
 #define m_SEGSIZE(x) ((x) << 0x0E) // Size (0 for 16-bit, 1 for 32)
 #define m_SEGGRAN(x) \
 	((x) << 0x0F) // Granularity (0 for 1B - 1MB, 1 for 4KB - 4GB)
-#define m_SEGPRIV(x) (((x)&0x03) << 0x05) // Set privilege level (0 - 3)
+#define m_SEGPRIV(x) (((x) & 0x03) << 0x05) // Set privilege level (0 - 3)
 
 #define m_SEGDATA_RD 0x00 // Read-Only
 #define m_SEGDATA_RDA 0x01 // Read-Only, accessed
@@ -52,7 +52,7 @@
 	m_SEGDESCTYPE(1) | m_SEGPRES(1) | m_SEGSAVL(0) | m_SEGLONG(0) | \
 		m_SEGSIZE(1) | m_SEGGRAN(1) | m_SEGPRIV(3) | m_SEGDATA_RDWR
 
-struct GDT_Entry {
+struct GDTEntry {
 	uint16_t limit_bits_0_15;
 	uint16_t base_bits_0_15;
 	uint8_t base_bits_16_23;
@@ -61,18 +61,16 @@ struct GDT_Entry {
 	uint8_t base_bits_24_31;
 } __attribute__((packed));
 
-//Describes the GDT itself. Is passed as the argument to "lgdt"
-struct GDT_Descriptor {
+struct GDTDescriptor {
 	uint16_t size;
 	uint32_t base;
 } __attribute__((packed));
 
-//Contains everything needed for an IDT
 struct GDT {
-	struct GDT_Entry entries[m_N_GDT_ENTRIES];
-	struct GDT_Descriptor descriptor;
+	struct GDTEntry entries[m_N_GDT_ENTRIES];
+	struct GDTDescriptor descriptor;
 } __attribute__((packed));
 
-struct GDT_Entry GDT_create_entry(uint32_t base, uint32_t limit,
-				  uint16_t flags);
-struct GDT_Entry GDT_create_zero_entry(void); //Creates a zeroed-out GDT entry
+struct GDTEntry GDT_create_entry(uint32_t base, uint32_t limit, uint16_t flags);
+//Creates a zeroed-out entry
+struct GDTEntry GDT_create_zero_entry(void);

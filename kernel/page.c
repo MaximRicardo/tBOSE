@@ -1,6 +1,5 @@
 #include <stdint.h>
 #include <stdbool.h>
-
 #include "page.h"
 
 static void update_pages(void)
@@ -20,7 +19,7 @@ static void invalidate_tlb_entry(void *virt_address) {
 
 }*/
 
-void PAGE_create_table(const void *table_start,
+void Page_create_table(const void *table_start,
 		       const void *table_virtual_address, uint32_t *page_table,
 		       uint32_t *page_table_phys_address, uint32_t *page_dir,
 		       uint32_t page_flags, uint32_t page_dir_flags)
