@@ -31,6 +31,7 @@ void PAGE_create_table(const void *table_start,
 	for (unsigned i = 0; i < m_N_PAGES_IN_A_TABLE; i++) {
 		void *cur_page_base_ptr =
 			(void *)((uint32_t)table_start + m_PAGE_SIZE * i);
+
 		page_table[i] = (uint32_t)cur_page_base_ptr | page_flags;
 	}
 

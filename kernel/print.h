@@ -1,7 +1,9 @@
 #pragma once
 
-extern unsigned PRINT_cursor_x;
-extern unsigned PRINT_cursor_y;
+#include <stdint.h>
+
+extern uint32_t PRINT_cursor_x;
+extern uint32_t PRINT_cursor_y;
 
 //Prints a character exactly at pixel coordinates: char_x, char_y. Ignores the text cursor's position
 void PRINT_char(char c, unsigned char_x, unsigned char_y);

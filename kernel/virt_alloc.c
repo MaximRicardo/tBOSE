@@ -12,60 +12,83 @@ static void invalidate_tlb_entry(void *virt_address)
 			 : [virt_address] "m"(virt_address));
 }
 
+static bool is_page_occupied(uint32_t idx)
+{
+	uint32_t *recursive_paging = (uint32_t *)0xffc00000;
+	uint32_t *page_entry = &recursive_paging[idx];
+
+	return *page_entry & 0x1;
+}
+
+static bool can_alloc_at_page(uint32_t page_idx, uint32_t pages_to_alloc)
+{
+	for (size_t look_ahead = 0; look_ahead < pages_to_alloc; look_ahead++) {
+		if (is_page_occupied(page_idx + look_ahead))
+			return false;
+	}
+
+	return true;
+}
+
+/* returns false if the allocation failed.
+ * should probably split this into multiple functions at some point.
+ * that point is never coming tho. */
+static bool allocate_pages(uint32_t start_idx, uint32_t n, uint32_t flags)
+{
+	uint32_t *recursive_paging = (uint32_t *)0xffc00000;
+
+	for (size_t look_ahead = 0; look_ahead < n; look_ahead++) {
+		//Use recursive paging to change the address the page maps to
+		uint32_t phys_location = (uint32_t)PHYS_ALLOC_malloc_page();
+		if (phys_location != 0) {
+			recursive_paging[start_idx + look_ahead] =
+				phys_location | flags;
+
+			invalidate_tlb_entry(
+				(void *)((start_idx + look_ahead) * 4096));
+		} else if (look_ahead > 0) {
+			//if the allocation failed go back and deallocate all
+			//the previously allocated pages
+
+			for (size_t go_back = look_ahead - 1;
+			     go_back < look_ahead; go_back--) {
+				recursive_paging[start_idx + go_back] &= ~1;
+				invalidate_tlb_entry(
+					(void *)((start_idx + go_back) * 4096));
+			}
+
+			return false;
+		} else
+			return false;
+	}
+
+	return true;
+}
+
 void *VIRT_ALLOC_malloc_page(size_t n, uint32_t flags, bool use_kernel_space)
 {
 	if (n == 0)
 		return NULL;
 
-	uint32_t *recursive_paging = (uint32_t *)0xffc00000;
-
 	size_t start_idx = use_kernel_space ? 0xc0000000 / 4096 : 0;
-	size_t end_idx = use_kernel_space ? 0xffffffff / 4096 :
+
+	//0xffbfffff is to not end up using the recursive paging region thingy
+	size_t end_idx = use_kernel_space ? 0xffbfffff / 4096 :
 					    0xbfffffff / 4096;
 
-	//Looping through every page.
-	//The first 8 MiB of virtual memory is skipped, because it is already mapped.
+	//the first 8 MiB of virtual memory is skipped because it's already
+	//mapped.
 	for (size_t i = start_idx; i <= end_idx; i++) {
-		bool can_alloc = true;
-		for (size_t look_ahead = 0; look_ahead < n; look_ahead++) {
-			uint32_t *page_entry =
-				&recursive_paging[i + look_ahead];
-
-			//Ignore any present pages. A page being present means it is already occupied.
-			if (*page_entry & 0x1) {
-				can_alloc = false;
-				break;
-			}
-		}
-
-		if (!can_alloc)
+		if (!can_alloc_at_page(i, n))
 			continue;
 
-		for (size_t look_ahead = 0; look_ahead < n; look_ahead++) {
-			//Use recursive paging to change the address the page maps to
-			uint32_t phys_location =
-				(uint32_t)PHYS_ALLOC_malloc_page();
-			if (phys_location != 0) {
-				recursive_paging[i + look_ahead] =
-					phys_location | flags;
-				//Update the cache
-				invalidate_tlb_entry(
-					(void *)((i + look_ahead) * 4096));
-			} else if (look_ahead > 0) {
-				for (size_t go_back = look_ahead - 1;
-				     go_back < look_ahead; go_back--) {
-					recursive_paging[i + go_back] &= ~1;
-					invalidate_tlb_entry(
-						(void *)((i + go_back) * 4096));
-				}
-				return NULL;
-			} else
-				return NULL;
-		}
+		if (!allocate_pages(i, n, flags))
+			return NULL;
 
 		uint32_t page_base = i * 4096;
-		*(uint32_t *)page_base =
-			n; //Store the number of pages as metadata
+		//The number of pages gets stored as metadata right below the
+		//returned ptr
+		*(uint32_t *)page_base = n;
 		return (void *)(page_base + 4);
 	}
 

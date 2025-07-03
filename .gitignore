@@ -6,4 +6,4 @@ CMakeFiles/
 cmake_install.cmake
 Makefile
 
-.clang-format
+compile_commands.json

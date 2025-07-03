@@ -1,10 +1,11 @@
 cmake_minimum_required(VERSION 3.10)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/kernel_bin)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 project(kernel)
 
-set(CMAKE_C_FLAGS "-std=c99 -target i386-elf -Wall -Wextra -Wpedantic -pedantic -ffreestanding -m32 -fno-stack-protector -nostdlib -ffunction-sections -mcmodel=kernel -Og -ggdb3")
+set(CMAKE_C_FLAGS "-std=c99 -target i386-elf -Wall -Wextra -Wpedantic -pedantic -ffreestanding -m32 -fno-stack-protector -nostdlib -ffunction-sections -Og -ggdb3 -fno-strict-aliasing")
 set(CMAKE_EXE_LINKER_FLAGS "-target i386-elf -T${CMAKE_CURRENT_SOURCE_DIR}/linker.ld -Ttext 0xc0001000 -z noexecstack")
 set(CMAKE_ASM_NASM_OBJECT_FORMAT "elf")
 

@@ -19,6 +19,8 @@
 
 #define m_N_IDT_ENTRIES 256
 
+#define m_IDT_SIZE (m_N_IDT_ENTRIES * sizeof(struct IDT_Entry))
+
 struct IDT_Entry {
 	uint16_t base_lo;
 	uint16_t sel;

@@ -62,6 +62,6 @@ extern bool VBE_info_has_been_set;
 extern struct VBE_Info VBE_info;
 extern struct VBE_ModeInfo VBE_mode_info;
 
-//Copies the source vbe infos into VBE_info, and VBE_mode_info
+//copies the source vbe infos into VBE_info, and VBE_mode_info
 void VBE_setup_infos(const struct VBE_Info *src_info,
 		     const struct VBE_ModeInfo *src_mode_info);

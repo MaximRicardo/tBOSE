@@ -1,43 +1,70 @@
 #include "phys_alloc.h"
 #include "mem_map.h"
+#include "page.h"
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdbool.h>
 
-//NOTE: DON'T PRINT ANYTHING HERE SINCE THESE FUNCTIONS MAY BE CALLED BEFORE THE FRAMEBUFFER HAS BEEN MAPPED IN VIRTUAL MEMORY
+//NOTE:
+//  DON'T PRINT ANYTHING HERE SINCE THESE FUNCTIONS MAY BE CALLED BEFORE THE
+//  FRAMEBUFFER HAS BEEN MAPPED IN VIRTUAL MEMORY
 
 //4294967296B = 4GiB
-#define m_MEM_BITMAP_SIZE (4294967296 / 4096 / 8)
+#define m_MEM_BITMAP_SIZE (4294967296 / m_PAGE_SIZE / 8)
 
-//Bitmap over the entire 4GiB of main memory
-//Each bit in the bitmap corresponds to a 4KiB page in physical memory. If the bit is clear, then that specific page is free, else it is occupied.
-//The 0th bit is the 0th page, 1st bit is the 1st page, 2nd bit is the 2nd page, etc.
-uint8_t *mem_bitmap = (uint8_t *)0x6000;
+//bitmap over the entire 4GiB of main memory
+//each bit in the bitmap corresponds to a 4KiB page in physical memory.
+//if the bit is clear, then that specific page is free, else it is occupied.
+//the 0th bit is the 0th page, 1st bit is the 1st page, 2nd bit is the 2nd
+//page, etc.
+static uint8_t *mem_bitmap = (uint8_t *)0x6000;
 
 void PHYS_ALLOC_init_bitmap(void)
 {
 	memset(mem_bitmap, 0, m_MEM_BITMAP_SIZE);
 }
 
+static bool is_page_occupied(size_t page_idx)
+{
+	size_t mem_bitmap_idx = page_idx / 8;
+	unsigned bit_idx = page_idx % 8;
+
+	return (mem_bitmap[mem_bitmap_idx] >> bit_idx) & 0x1;
+}
+
+static void mark_page_occupied(size_t page_idx)
+{
+	size_t mem_bitmap_idx = page_idx / 8;
+	unsigned bit_idx = page_idx % 8;
+
+	mem_bitmap[mem_bitmap_idx] |= 1 << bit_idx;
+}
+
+static void mark_page_free(size_t page_idx)
+{
+	size_t mem_bitmap_idx = page_idx / 8;
+	unsigned bit_idx = page_idx % 8;
+
+	mem_bitmap[mem_bitmap_idx] &= ~((uint8_t)1 << bit_idx);
+}
+
 void *PHYS_ALLOC_malloc_page(void)
 {
-	//Looping through every page.
-	//The first MiB of memory is skipped, because it is used for various things that should not be overwritten.
-	for (size_t i = 1048576 / 4096; i < m_MEM_BITMAP_SIZE * 8; i++) {
-		size_t mem_bitmap_idx = i / 8;
-		unsigned bit_idx = i % 8;
-		//Ignore any occupied entries
-		if ((mem_bitmap[mem_bitmap_idx] >> bit_idx) & 0x1)
+	//low mem is skipped, because it is used for various things that should
+	//not be overwritten.
+	for (size_t i = 1048576 / m_PAGE_SIZE; i < m_MEM_BITMAP_SIZE * 8; i++) {
+		if (is_page_occupied(i))
 			continue;
 
 		uint32_t page_base = i * 4096;
-		//TODO: Optimize this
+
+		//some might call this slow. i say stfu.
 		if (MEMORY_MAP_region_type(page_base) !=
 		    m_MEMORY_MAP_ENTRY_FREE_TYPE)
 			continue;
 
-		//Mark the page as now being allocated
-		mem_bitmap[mem_bitmap_idx] |= 1 << bit_idx;
+		mark_page_occupied(i);
 
 		return (void *)page_base;
 	}
@@ -47,10 +74,5 @@ void *PHYS_ALLOC_malloc_page(void)
 
 void PHYS_ALLOC_free_page(void *ptr)
 {
-	uint32_t aligned_ptr = (uint32_t)ptr & -4096;
-
-	size_t mem_bitmap_idx = (aligned_ptr / 4096) / 8;
-	unsigned bit_idx = (aligned_ptr / 4096) % 8;
-
-	mem_bitmap[mem_bitmap_idx] &= ~((uint8_t)1 << bit_idx);
+	mark_page_free((uint32_t)ptr / m_PAGE_SIZE);
 }

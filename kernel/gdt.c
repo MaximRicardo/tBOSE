@@ -6,7 +6,8 @@ struct GDT_Entry GDT_create_entry(uint32_t base, uint32_t limit, uint16_t flags)
 {
 	struct GDT_Entry gdt_entry;
 
-	//Each GDT entry is exacty 8 bytes / 64 bits large
+	//each GDT entry is exactly 8 bytes large
+	//-fno-strict-aliasing, god bless u
 	uint64_t *entry = (uint64_t *)(&gdt_entry);
 
 	*entry = limit & 0x000f0000;

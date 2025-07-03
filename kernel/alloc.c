@@ -1,6 +1,7 @@
 int a;
 
-#ifdef I_AM_MAYBE_MAKING_THIS_LATER
+//i don't even remember why i have this here
+#ifdef m_I_AM_MAYBE_MAKING_THIS_LATER
 
 #include <stddef.h>
 #include <stdbool.h>
@@ -22,8 +23,8 @@ struct AllocEntry {
 #define m_N_ALLOC_ENTRIES 100
 
 //Every entry in a linked list. The list is sorted with addresses in rising order
-struct AllocEntry alloc_entries[m_N_ALLOC_ENTRIES] = { 0 };
-size_t n_used_entries = 0;
+static struct AllocEntry alloc_entries[m_N_ALLOC_ENTRIES] = { 0 };
+static size_t n_used_entries = 0;
 
 bool entry_disabled(const struct AllocEntry *entry_ptr)
 {

@@ -38,7 +38,6 @@ global INTERRUPT_28
 global INTERRUPT_29
 global INTERRUPT_30
 global INTERRUPT_31
-
 global INTERRUPT_32
 
 global INTERRUPT_others

@@ -1,5 +1,3 @@
-
-
 #include "vbe.h"
 
 bool VBE_info_has_been_set = false;
