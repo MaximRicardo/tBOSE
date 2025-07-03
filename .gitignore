@@ -1,1 +1,9 @@
 bin/
+kernel_bin/
+
+CMakeFiles/
+CMakeCache.txt
+Makefile
+cmake_install.cmake
+
+.clang-format
