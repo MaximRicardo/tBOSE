@@ -19,7 +19,7 @@ void *VIRT_ALLOC_malloc_page(size_t n, uint32_t flags, bool use_kernel_space);
 void VIRT_ALLOC_free_page(void *ptr);
 
 void *k_malloc(size_t n, uint32_t flags, bool use_kernel_space);
-void *k_calloc(size_t n_memb, size_t memb_size, uint32_t flags, bool use_kernel_space);
+void *k_calloc(size_t n_memb, size_t memb_size, uint32_t flags,
+	       bool use_kernel_space);
 void *k_realloc(void *ptr, size_t n, uint32_t flags, bool use_kernel_space);
 void k_free(void *ptr);
-

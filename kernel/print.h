@@ -16,5 +16,5 @@ void k_puts(const char *str);
 
 //Returns 0 if no error occured. Else returns a non-zero integer.
 //Otherwise, just acts like the C function but with some formats missing for now.
-__attribute__((format (printf, 1, 2)))
-int k_printf(const char *restrict fmt, ...);
+__attribute__((format(printf, 1, 2))) int k_printf(const char *restrict fmt,
+						   ...);

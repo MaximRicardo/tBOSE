@@ -9,7 +9,7 @@
 #define m_N_PAGES_IN_A_TABLE 1024
 
 //Size of a table of 1024 pages
-#define m_PAGE_TABLE_SIZE (m_PAGE_SIZE*m_N_PAGES_IN_A_TABLE)
+#define m_PAGE_TABLE_SIZE (m_PAGE_SIZE * m_N_PAGES_IN_A_TABLE)
 
 /*
  * Creates a table of 1024 pages, totaling in 4 MiB covered.
@@ -21,5 +21,7 @@
  * page_flags: Flags each page should have.
  * page_dir_flags: Flags the relevant page directory entry should have.
  */
-void PAGE_create_table(const void *table_start, const void *table_virtual_address, uint32_t *page_table, uint32_t *page_table_phys_address, uint32_t *page_dir, uint32_t page_flags,
-        uint32_t page_dir_flags);
+void PAGE_create_table(const void *table_start,
+		       const void *table_virtual_address, uint32_t *page_table,
+		       uint32_t *page_table_phys_address, uint32_t *page_dir,
+		       uint32_t page_flags, uint32_t page_dir_flags);

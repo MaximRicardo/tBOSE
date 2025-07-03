@@ -21,7 +21,8 @@ void PIXEL_plot(unsigned x, unsigned y, uint32_t color);
 void PIXEL_plot_norm_rgb(unsigned x, unsigned y, struct COLOR_rgb color);
 
 //Copies the back buffer to the LFB. If the back buffer is NULL, then this function does nothing.
-void PIXEL_partially_flip_buffer(unsigned x_start, unsigned y_start, unsigned x_end, unsigned y_end);
+void PIXEL_partially_flip_buffer(unsigned x_start, unsigned y_start,
+				 unsigned x_end, unsigned y_end);
 
 //Copies the back buffer to the LFB. If the back buffer is NULL, then this function does nothing.
 void PIXEL_flip_buffer(void);
