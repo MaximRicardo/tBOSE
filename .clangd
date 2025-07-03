@@ -1,6 +1,0 @@
-CompileFlags:
-  Add:
-   - "-xc-header"
-   - "-ffreestanding"
-   - "-m32"
-   - "-std=c99"
