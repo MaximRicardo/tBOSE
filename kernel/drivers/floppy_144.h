@@ -1,3 +1,4 @@
+/*
 #pragma once
 
 #include "../chs.h"
@@ -10,4 +11,8 @@ struct CHS FLOPPY_144_lba_to_chs(uint32_t lba);
 void FLOPPY_144_reset(void);
 void FLOPPY_144_init(void);
 
-void FLOPPY_144_load(struct CHS location, uint32_t n_sectors, void *output);
+void FLOPPY_144_load(struct CHS location, uint32_t n_sectors, unsigned drive, void *output);
+
+//Handles interrupt 6
+void FLOPPY_144_irq_handler(void);
+*/

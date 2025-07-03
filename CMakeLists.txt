@@ -4,7 +4,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/kernel_bin)
 
 project(kernel)
 
-set(CMAKE_C_FLAGS "-std=c99 -target i386-elf -Wall -Wextra -Wpedantic -pedantic -ffreestanding -m32 -fno-stack-protector -nostdlib -ffunction-sections -mcmodel=kernel -O2")
+set(CMAKE_C_FLAGS "-std=c99 -target i386-elf -Wall -Wextra -Wpedantic -pedantic -ffreestanding -m32 -fno-stack-protector -nostdlib -ffunction-sections -mcmodel=kernel -Og -ggdb3")
 set(CMAKE_EXE_LINKER_FLAGS "-target i386-elf -T${CMAKE_CURRENT_SOURCE_DIR}/linker.ld -Ttext 0xc0001000 -z noexecstack")
 set(CMAKE_ASM_NASM_OBJECT_FORMAT "elf")
 

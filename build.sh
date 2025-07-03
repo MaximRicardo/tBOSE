@@ -13,3 +13,21 @@ cat $SCRIPT_DIR/bin/boot.bin $SCRIPT_DIR/bin/second_stage.bin > $SCRIPT_DIR/bin/
 . $SCRIPT_DIR/build_kernel.sh
 
 cat $SCRIPT_DIR/bin/boot_loader.bin $SCRIPT_DIR/kernel_bin/kernel.bin > $SCRIPT_DIR/bin/os.bin
+
+: '
+dd if=/dev/zero of=$SCRIPT_DIR/floppy.img bs=1024 count=1440
+dd if=$SCRIPT_DIR/bin/os.bin of=$SCRIPT_DIR/floppy.img seek=0 conv=notrunc
+
+echo "1"
+mkdir -p $SCRIPT_DIR/iso/
+echo "2"
+cp $SCRIPT_DIR/floppy.img $SCRIPT_DIR/iso/
+echo "3"
+#genisoimage -quiet -V 'OS' -input-charset iso8859-1 -o $SCRIPT_DIR/os.iso -b floppy.img \
+#    -hide $SCRIPT_DIR/floppy.img $SCRIPT_DIR/iso/
+genisoimage -quiet -o $SCRIPT_DIR/os.iso $SCRIPT_DIR/bin/os.bin
+echo "4"
+
+mv $SCRIPT_DIR/os.iso $SCRIPT_DIR/iso/
+rm $SCRIPT_DIR/floppy.img
+'

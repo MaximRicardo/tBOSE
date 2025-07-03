@@ -3,7 +3,7 @@
 [org 0x7c00]
 
 ;The second bootloader stage will be placed right after the first
-%define SECOND_STAGE_LOCATION 0x7e00
+%define SECOND_STAGE_LOCATION 0x7d00
 %define SECOND_STAGE_SECTORS_TO_READ 4
 
 segment .text

@@ -1,6 +1,6 @@
 ;Second stage of the boot loader
 
-[org 0x7e00]
+[org 0x7d00]
 
 CODE_SEG equ GDT_CodeDescriptor - GDT_Start
 DATA_SEG equ GDT_DataDescriptor - GDT_Start

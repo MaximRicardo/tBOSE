@@ -21,6 +21,7 @@
 #include "pic.h"
 #include "pit.h"
 #include "io.h"
+#include "drivers/ata.h"
 
 struct GDT gdt;
 struct IDT idt;
@@ -28,8 +29,8 @@ struct TSS tss;
 
 uint32_t *page_directory = (uint32_t *)0x5d000;
 
-uint32_t *page_tables_table =
-	(uint32_t *)0x5f000; //Look in low_mem_map.txt for context
+//Look in low_mem_map.txt for context
+uint32_t *page_tables_table = (uint32_t *)0x5f000;
 
 uint32_t boot_disk;
 
@@ -295,6 +296,8 @@ k_main(const struct VBE_Info *old_vbe_info_ptr,
 
 	//Init the PIC
 	PIC_init();
+	PIC_irq_clear_mask(0); //PIT interrupt
+	PIC_irq_clear_mask(6); //Floppy disk interrupt
 
 	//Setup the PIT so it sends an interrupt approximately every millisecond
 	IO_out_port_b(0x43, 0x34);
@@ -315,7 +318,9 @@ k_main(const struct VBE_Info *old_vbe_info_ptr,
 
 void k_main_setup_done()
 {
-	//NOTE: THE KERNEL SETUP PROCESS IS NOW DONE! THE MAP OF LOW MEMORY NOW LOOKS LIKE THE SECOND ONE IN "low_mem_map.txt"!
+	//NOTE:
+	//    THE KERNEL SETUP PROCESS IS NOW DONE! THE MAP OF LOW MEMORY NOW
+	//    LOOKS LIKE THE SECOND ONE IN "low_mem_map.txt"!
 
 	uint32_t sp_value;
 	__asm__ volatile("mov %%esp, %0\n" : "=r"(sp_value));
@@ -356,6 +361,11 @@ void k_main_setup_done()
 
 	k_printf("%uMiB of free memory detected.\n",
 		 MEMORY_MAP_available_mem() / 1024 / 1024);
+
+	ATA_soft_reset(&ATA_device);
+
+	void *ptr = NULL;
+	ATA_read_sector(&ATA_device, ptr);
 
 	enter_ring_3(halt_forever);
 
