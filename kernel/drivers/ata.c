@@ -1,3 +1,5 @@
+#ifdef m_COMMENT
+
 #include "ata.h"
 #include "../io.h"
 #include "../timer.h"
@@ -113,3 +115,5 @@ void ATA_read_sector(struct ATA_Device *ctrl, void *data)
 	drive_head_reg |= (1 << DRIVE_HEAD_REG_LBA);
 	IO_out_port_b(ctrl->base + IO_DRIVE_HEAD_REG, drive_head_reg);
 }
+
+#endif

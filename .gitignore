@@ -6,6 +6,8 @@ CMakeFiles/
 cmake_install.cmake
 Makefile
 
+.nvim.lua
+
 compile_commands.json
 .clangd
 .cache/

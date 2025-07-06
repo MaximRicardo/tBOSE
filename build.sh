@@ -12,7 +12,7 @@ cat $SCRIPT_DIR/bin/boot.bin $SCRIPT_DIR/bin/second_stage.bin > $SCRIPT_DIR/bin/
 # Build the kernel aswell
 . $SCRIPT_DIR/build_kernel.sh
 
-cat $SCRIPT_DIR/bin/boot_loader.bin $SCRIPT_DIR/kernel_bin/kernel.bin > $SCRIPT_DIR/bin/os.bin
+cat $SCRIPT_DIR/bin/boot_loader.bin $SCRIPT_DIR/kernel_bin/kernel.bin "test_str" > $SCRIPT_DIR/bin/os.bin
 
 : '
 dd if=/dev/zero of=$SCRIPT_DIR/floppy.img bs=1024 count=1440

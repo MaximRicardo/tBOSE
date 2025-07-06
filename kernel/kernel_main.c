@@ -1,3 +1,4 @@
+#include "chs.h"
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -21,7 +22,7 @@
 #include "pic.h"
 #include "pit.h"
 #include "io.h"
-#include "drivers/ata.h"
+#include "drivers/floppy_144.h"
 
 static struct GDT gdt;
 static struct IDT idt;
@@ -415,7 +416,7 @@ __attribute__((noreturn)) void k_main_setup_done(void)
 	uint32_t sp_value;
 	__asm__ volatile("mov %%esp, %0\n" : "=r"(sp_value));
 
-	char *str = k_calloc(10, sizeof(*str), 0x3, true);
+	char *str = k_calloc(10, sizeof(*str), m_PAGE_FLAG_rw, true);
 	k_printf("str = \"%s\", str = %p\n", str, (void *)str);
 	strcpy(str, "hello!");
 	k_printf("str = \"%s\", str = %p\n", str, (void *)str);
@@ -434,10 +435,15 @@ __attribute__((noreturn)) void k_main_setup_done(void)
 	k_printf("%uMiB of free memory detected.\n",
 		 MemoryMap_available_mem() / 1024 / 1024);
 
-	ATA_soft_reset(&ATA_device);
+	Floppy144_init();
 
-	void *ptr = NULL;
-	ATA_read_sector(&ATA_device, ptr);
+	void *buf = k_calloc(512, 1, m_PAGE_FLAG_rw, true);
+	k_printf("loading from 0x%08x\n", 512 * (5 + 32));
+	Floppy144_load(CHS_lba_to_chs(512 * (5 + 32),
+				      m_FLOPPY_144_SECTORS_PER_TRACK),
+		       1, boot_disk, buf);
+
+	k_printf("done loading\n");
 
 	enter_ring_3(halt_forever);
 
